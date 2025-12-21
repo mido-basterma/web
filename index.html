@@ -17,6 +17,35 @@
     header { background-color:#bf360c; color:#fff; padding:25px 0; text-align:center; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
     header h1 { font-size:2.2em; margin-bottom: 5px; }
     
+    /* تنسيق زر تحميل التطبيق */
+    .app-download-btn {
+      display: inline-block;
+      margin-top: 15px;
+      background-color: #3e2723; 
+      color: #fff;
+      padding: 12px 30px;
+      border-radius: 50px;
+      text-decoration: none;
+      font-weight: bold;
+      font-size: 1.1em;
+      border: 2px solid #fff;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      transition: transform 0.2s, background 0.3s;
+      animation: pulseBtn 2s infinite; 
+    }
+    .app-download-btn:hover {
+      background-color: #5d4037;
+      transform: scale(1.05);
+    }
+    .app-download-btn i { margin-left: 8px; font-size: 1.2em; }
+
+    @keyframes pulseBtn {
+      0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4); }
+      70% { box-shadow: 0 0 0 10px rgba(255, 255, 255, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+    }
+
+    /* العناوين الفاصلة */
     .category-title {
       background: #3e2723; color: #fff;
       display: inline-block; padding: 10px 30px;
@@ -194,7 +223,7 @@
   </div>
 </div>
 
-<!-- === 2. نافذة اختيار وزن الكيلو (تمت إضافة الخيارات الجديدة) === -->
+<!-- === 2. نافذة اختيار وزن الكيلو === -->
 <div id="weightModal" class="modal">
   <div class="modal-content">
     <span class="close-btn" onclick="closeWeightModal()">×</span>
@@ -212,7 +241,7 @@
   </div>
 </div>
 
-<!-- === 3. نافذة تأكيد حذف السلة (Modal) === -->
+<!-- === 3. نافذة تأكيد حذف السلة === -->
 <div id="clearCartModal" class="modal">
   <div class="modal-content">
     <span class="close-btn" onclick="closeClearCartModal()">×</span>
@@ -226,7 +255,7 @@
   </div>
 </div>
 
-<!-- === 4. نافذة تنبيه السلة الفارغة (Modal) === -->
+<!-- === 4. نافذة تنبيه السلة الفارغة === -->
 <div id="emptyAlertModal" class="modal">
   <div class="modal-content">
     <span class="close-btn" onclick="closeEmptyAlertModal()">×</span>
@@ -270,6 +299,11 @@
   <h1>ميدو ملك البسترما 👑</h1>
   <p style="font-size:1.2em; font-weight:bold; margin-top:5px;">الشياح - طريق صيدا القديمة</p>
   <p style="font-size:1.1em; font-weight:bold; color:#ffe0b2; margin-top:5px; font-family:sans-serif;">Mido Malak El Basterma</p>
+  
+  <!-- === زر تحميل التطبيق (الرابط المباشر) === -->
+  <a href="https://www.dropbox.com/scl/fi/vnulwpoh2w2nvaw9kohun/midoapk.apk?rlkey=bcikn7zbfxxis6qol8ku9g1in&st=d6h7xa4a&dl=1" class="app-download-btn">
+    <i class="fa-brands fa-android"></i> اضغط هنا لتحميل تطبيقنا
+  </a>
 </header>
 
 <div class="welcome">
@@ -544,7 +578,6 @@ function sendOrder() {
   let total = 0;
   cart.forEach((item, index) => {
     message += `${index + 1}- ${item.name} ${item.notes}%0a`;
-    // تم حذف سعر الصنف الفردي من الرسالة هنا
     total += item.price;
   });
   let usdTotal = (total / RATE).toFixed(2);
