@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ميدو ملك البسترما</title>
+  <link rel="icon" href="https://midomido.neocities.org/bastermaa.jpg" type="image/jpeg">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  
+  <style>
+    /* === تنسيقات عامة === */
+    * { margin:0; padding:0; box-sizing:border-box; font-family:'Cairo', sans-serif; }
+    body { background-color:#fff3e0; color:#3e2723; line-height:1.6; padding-bottom: 80px; }
+    
+    header { background-color:#bf360c; color:#fff; padding:25px 0; text-align:center; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+    header h1 { font-size:2.2em; margin-bottom: 5px; }
+    
+    /* تنسيق زر تحميل التطبيق */
+    .app-download-btn {
+      display: inline-block;
+      margin-top: 15px;
+      background-color: #3e2723; 
+      color: #fff;
+      padding: 12px 30px;
+      border-radius: 50px;
+      text-decoration: none;
+      font-weight: bold;
+      font-size: 1.1em;
+      border: 2px solid #fff;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      transition: transform 0.2s, background 0.3s;
+      animation: pulseBtn 2s infinite; 
+    }
+    .app-download-btn:hover {
+      background-color: #5d4037;
+      transform: scale(1.05);
+    }
+    .app-download-btn i { margin-left: 8px; font-size: 1.2em; }
+
+    @keyframes pulseBtn {
+      0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4); }
+      70% { box-shadow: 0 0 0 10px rgba(255, 255, 255, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+    }
+
+    /* العناوين الفاصلة */
+    .category-title {
+      background: #3e2723; color: #fff;
+      display: inline-block; padding: 10px 30px;
+      border-radius: 30px; margin: 40px auto 20px;
+      font-size: 1.5em; box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+    
+    /* === تصميم المنتجات === */
+    .products { display:flex; flex-wrap:wrap; justify-content:center; gap:25px; margin-bottom: 30px; padding: 0 15px; }
+    
+    .product { 
+      background: #fff;
+      border: 2px solid #bf360c; 
+      border-radius: 25px; 
+      padding: 15px; 
+      box-shadow: 0 10px 20px rgba(0,0,0,0.1); 
+      transition: transform 0.3s, box-shadow 0.3s;
+      width: 100%; position: relative; overflow: hidden;
+    }
+    .product:hover { 
+      transform: translateY(-5px); 
+      box-shadow: 0 15px 25px rgba(191, 54, 12, 0.2); 
+    }
+    .product img { 
+      width:100%; height:200px; object-fit: contain; 
+      border-radius: 15px; 
+      margin-bottom: 10px;
+      background-color: #fffbf5;
+    } 
+    .product h3 { margin-top:5px; font-size: 1.4em; font-weight: 800; color: #3e2723; }
+    
+    /* تنسيق خاص للكيلو (بدون صور) */
+    .kilo-item {
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
+      min-height: 180px;
+      border: 3px double #bf360c;
+    }
+    .kilo-item h3 { font-size: 1.6em; margin-bottom: 10px; }
+
+    /* تنسيق السعر */
+    .price-box {
+      display: flex; justify-content: space-between; align-items: center;
+      background: #fff3e0; padding: 8px 12px; border-radius: 15px;
+      margin: 10px 0 15px; font-weight: 900; border: 1px dashed #bf360c;
+      width: 100%;
+    }
+    .price-lbp { color: #bf360c; font-size: 1.1em; }
+    .price-usd { color: #2e7d32; font-size: 1.1em; direction: ltr; }
+
+    /* الشاشات الكبيرة */
+    @media (min-width: 768px) {
+      #sandwichesContainer .product, #drinksContainer .product { width: calc(33.333% - 25px); max-width: 320px; }
+      #kiloContainer .product { width: calc(50% - 25px); max-width: 400px; }
+    }
+
+    .add-btn {
+      background: #3e2723; color: #fff; border: none; padding: 12px; 
+      border-radius: 50px; width: 100%; cursor: pointer; font-size: 1.1em;
+      font-weight: bold; transition: background 0.2s, transform 0.1s;
+    }
+    .add-btn:active { transform: scale(0.95); }
+
+    /* === النوافذ المنبثقة (Modals) === */
+    .modal { display:none; position:fixed; left:0; top:0; width:100%; height:100%; background-color:rgba(0,0,0,0.7); backdrop-filter: blur(4px); overflow: auto; }
+    
+    #cartModal { z-index: 3000; } 
+    #customizeModal { z-index: 3500; }
+    #weightModal { z-index: 3500; }
+    #clearCartModal { z-index: 4000; } 
+    #emptyAlertModal { z-index: 4000; } 
+
+    .modal-content { 
+      background-color:#fff; margin:15% auto; padding:25px; 
+      border-radius:20px; width:85%; max-width:400px; position: relative; text-align: center;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3); border: 2px solid #bf360c;
+    }
+    .close-btn { float:left; font-size:28px; cursor:pointer; color:#999; }
+    
+    /* خيارات الوزن */
+    .weight-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 15px; }
+    .weight-option {
+      background: #fff8e1; border: 2px solid #bf360c; color: #3e2723;
+      padding: 15px; border-radius: 15px; cursor: pointer; font-weight: bold;
+      transition: background 0.2s;
+    }
+    .weight-option:hover { background: #bf360c; color: #fff; }
+
+    /* خيارات السندويش */
+    .ingredient-option {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 12px; border-bottom: 1px solid #eee; font-size: 1.1em; text-align: right;
+    }
+    .ingredient-option input[type="checkbox"] { transform: scale(1.5); accent-color: #2e7d32; }
+    
+    /* === السلة وتأثيرات الحركة === */
+    .cart-float {
+      position: fixed; bottom: 20px; right: 20px;
+      background-color: #bf360c; color: #fff;
+      width: 65px; height: 65px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px; cursor: pointer; z-index: 2000;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+      transition: transform 0.2s;
+    }
+    
+    @keyframes cartPulse {
+      0% { transform: scale(1); background-color: #bf360c; }
+      50% { transform: scale(1.3) rotate(-10deg); background-color: #2e7d32; } 
+      100% { transform: scale(1); background-color: #bf360c; }
+    }
+    .cart-added-animation {
+      animation: cartPulse 0.4s ease-in-out;
+    }
+
+    #cartCount {
+      position: absolute; top: -5px; left: -5px;
+      background: #ffeb3b; color: #bf360c; font-size: 14px;
+      width: 25px; height: 25px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center; font-weight: bold; border: 2px solid #bf360c;
+    }
+    .cart-item { border-bottom: 1px dashed #ccc; padding: 10px 0; text-align: right; }
+    .cart-notes { font-size: 0.85em; color: #d32f2f; display: block; margin-top: 3px; }
+    
+    .whatsapp-checkout {
+      background: #25d366; color: white; border: none; padding: 15px; 
+      width: 100%; border-radius: 10px; font-size: 1.1em; font-weight: bold; cursor: pointer; margin-top: 15px;
+    }
+    
+    .clear-cart-btn {
+      background: #c62828; color: white; border: none; padding: 8px 15px;
+      border-radius: 10px; cursor: pointer; font-size: 0.9em; margin-top: 10px;
+    }
+
+    /* === التواصل === */
+    .contact-section { background: #fff; padding: 40px 20px; text-align: center; margin-top: 40px; border-top: 5px solid #bf360c; }
+    .contact-btn {
+      display: block; width: 100%; max-width: 350px; margin: 10px auto;
+      padding: 15px; color: #fff; border-radius: 10px; text-decoration: none;
+      font-weight: bold; font-size: 1.1em; transition: transform 0.2s;
+    }
+    .contact-btn:hover { transform: scale(1.02); }
+    .btn-wa { background: #25d366; }
+    .btn-ph { background: #1565c0; }
+    .btn-mp { background: #d32f2f; }
+    
+    /* === الشات بوت === */
+    .chat-widget-btn { position: fixed; bottom: 20px; left: 20px; background: #3e2723; color: white; padding: 10px 20px; border-radius: 30px; cursor: pointer; z-index: 2000; display:flex; align-items:center; gap:10px;}
+    .chat-box { display: none; position: fixed; bottom: 85px; left: 20px; width: 300px; height: 450px; background: white; border: 1px solid #bf360c; border-radius: 15px; z-index: 2001; flex-direction: column; }
+    .chat-header { background: #bf360c; color: white; padding: 10px; text-align: right; }
+    .chat-body { flex: 1; padding: 10px; overflow-y: auto; background: #fff8e1; }
+    .bot-msg, .user-msg { padding: 8px 12px; border-radius: 10px; margin-bottom: 8px; width: fit-content; max-width: 80%; }
+    .bot-msg { background: #fff; float: right; clear: both; border: 1px solid #ddd; border-top-right-radius: 0; }
+    .user-msg { background: #bf360c; color: white; float: left; clear: both; border-top-left-radius: 0; }
+    .chat-options { padding: 10px; border-top: 1px solid #eee; display: flex; gap: 5px; flex-wrap: wrap; justify-content: center; }
+    .chat-options button { background: #3e2723; color: white; border: none; padding: 8px 5px; border-radius: 15px; cursor: pointer; font-size: 0.8em; flex: 1 0 30%; margin-bottom: 5px; }
+
+    .welcome { padding:30px 20px; text-align:center; background: linear-gradient(to bottom, #ffe9c4, #fff3e0); border-bottom:3px solid #bf360c; }
+    #counter { margin-top:15px; font-weight:bold; color:#bf360c; font-size:18px; background: rgba(255,255,255,0.5); padding: 5px; border-radius: 10px; display: inline-block; }
+
+  </style>
+</head>
+
+<body>
+
+<!-- === 1. نافذة تخصيص السندويش === -->
+<div id="customizeModal" class="modal">
+  <div class="modal-content" style="text-align: right;">
+    <span class="close-btn" onclick="closeCustomizeModal()">×</span>
+    <h3 style="color:#bf360c; text-align:center;">تعديل السندويش 🥙</h3>
+    <p style="text-align:center; margin-bottom:15px; font-size:0.9em; color:#666;">شيل الصح عن المكون اللي ما بدك ياه</p>
+    <div id="ingredientsList"></div>
+    <button onclick="confirmAddToCart()" class="add-btn" style="margin-top:20px; background:#2e7d32;">
+      تأكيد وإضافة للسلة ✅
+    </button>
+  </div>
+</div>
+
+<!-- === 2. نافذة اختيار وزن الكيلو === -->
+<div id="weightModal" class="modal">
+  <div class="modal-content">
+    <span class="close-btn" onclick="closeWeightModal()">×</span>
+    <h3 style="color:#bf360c;">حدد الكمية (الوزن) ⚖️</h3>
+    <div class="weight-grid">
+      <div class="weight-option" onclick="selectWeight(200)">وقية (200غ)</div>
+      <div class="weight-option" onclick="selectWeight(300)">وقية ونصف (300غ)</div>
+      <div class="weight-option" onclick="selectWeight(400)">وقيتين (400غ)</div>
+      <div class="weight-option" onclick="selectWeight(500)">نصف كيلو (500غ)</div>
+      <div class="weight-option" onclick="selectWeight(600)">3 وقيات (600غ)</div>
+      <div class="weight-option" onclick="selectWeight(750)">كيلو إلا ربع (750غ)</div>
+      <div class="weight-option" onclick="selectWeight(800)">4 وقيات (800غ)</div>
+      <div class="weight-option" onclick="selectWeight(1000)">كيلو (1000غ)</div>
+    </div>
+  </div>
+</div>
+
+<!-- === 3. نافذة تأكيد حذف السلة === -->
+<div id="clearCartModal" class="modal">
+  <div class="modal-content">
+    <span class="close-btn" onclick="closeClearCartModal()">×</span>
+    <div style="font-size:3em; color:#c62828; margin-bottom:10px;"><i class="fa-solid fa-trash-can"></i></div>
+    <h3 style="color:#3e2723;">تفريغ السلة؟</h3>
+    <p style="margin:10px 0; color:#666;">أكيد بدك تحذف كل شي طلبته؟</p>
+    <div style="display:flex; gap:10px; justify-content:center; margin-top:20px;">
+      <button onclick="confirmClearCart()" style="background:#c62828; color:white; border:none; padding:10px 20px; border-radius:10px; cursor:pointer;">نعم، احذف</button>
+      <button onclick="closeClearCartModal()" style="background:#777; color:white; border:none; padding:10px 20px; border-radius:10px; cursor:pointer;">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- === 4. نافذة تنبيه السلة الفارغة === -->
+<div id="emptyAlertModal" class="modal">
+  <div class="modal-content">
+    <span class="close-btn" onclick="closeEmptyAlertModal()">×</span>
+    <div style="font-size:3em; color:#fbc02d; margin-bottom:10px;"><i class="fa-solid fa-triangle-exclamation"></i></div>
+    <h3 style="color:#3e2723;">يا غالي!</h3>
+    <p style="margin:10px 0; color:#666;">السلة أصلاً فارغة، ما في شي تبعته أو تحذفه 😅</p>
+    <button onclick="closeEmptyAlertModal()" style="margin-top:15px; background:#bf360c; color:white; border:none; padding:10px 30px; border-radius:20px; cursor:pointer;">بسيطة</button>
+  </div>
+</div>
+
+<!-- === 5. نافذة السلة الرئيسية === -->
+<div id="cartModal" class="modal">
+  <div class="modal-content">
+    <span class="close-btn" onclick="toggleCart()">×</span>
+    <h3 style="color:#bf360c; border-bottom:1px solid #eee; padding-bottom:10px;">🛒 سلة طلباتك</h3>
+    
+    <div style="text-align:left;">
+      <button class="clear-cart-btn" onclick="openClearCartModal()"><i class="fa-solid fa-trash"></i> محو الجميع</button>
+    </div>
+
+    <div id="cartItems" style="max-height: 300px; overflow-y: auto; margin-top:10px;"></div>
+    
+    <div style="border-top: 2px solid #bf360c; margin-top: 15px; padding-top: 10px;">
+      <h3 style="text-align:center; font-size:1em; margin-bottom:5px;">المجموع بدون دليفري:</h3>
+      <div style="display:flex; justify-content:space-between; align-items:center; background:#eee; padding:10px; border-radius:8px; font-weight:bold;">
+        <span id="cartTotalLBP" style="color:#bf360c; font-size:1.2em;">0 ل.ل</span>
+        <span id="cartTotalUSD" style="color:#2e7d32; font-size:1.2em; direction:ltr;">$0.00</span>
+      </div>
+    </div>
+    <button class="whatsapp-checkout" onclick="sendOrder()"><i class="fab fa-whatsapp"></i> إرسال الطلب</button>
+  </div>
+</div>
+
+<!-- === زر السلة العائم === -->
+<div class="cart-float" onclick="toggleCart()">
+  <i class="fa-solid fa-cart-shopping"></i>
+  <span id="cartCount">0</span>
+</div>
+
+<header>
+  <h1>ميدو ملك البسترما 👑</h1>
+  <p style="font-size:1.2em; font-weight:bold; margin-top:5px;">الشياح - طريق صيدا القديمة</p>
+  <p style="font-size:1.1em; font-weight:bold; color:#ffe0b2; margin-top:5px; font-family:sans-serif;">Mido Malak El Basterma</p>
+  
+  <!-- === زر تحميل التطبيق (الرابط المباشر) === -->
+  <a href="https://www.dropbox.com/scl/fi/vnulwpoh2w2nvaw9kohun/midoapk.apk?rlkey=bcikn7zbfxxis6qol8ku9g1in&st=d6h7xa4a&dl=1" class="app-download-btn">
+    <i class="fa-brands fa-android"></i> اضغط هنا لتحميل تطبيقنا
+  </a>
+</header>
+
+<div class="welcome">
+  <div id="statusBox"></div>
+  <div id="counter"></div>
+</div>
+
+<!-- === الأقسام (سندويشات، كيلو، مشروبات) === -->
+<div style="text-align:center;"><div class="category-title">🥙 قسم السندويشات</div></div>
+<div class="products" id="sandwichesContainer"></div>
+
+<div style="text-align:center;"><div class="category-title">⚖️ أسعار الكيلو (حسب الوزن)</div></div>
+<div class="products" id="kiloContainer"></div>
+
+<div style="text-align:center;"><div class="category-title">🥤 مشروبات باردة</div></div>
+<div class="products" id="drinksContainer"></div>
+
+<!-- === التواصل === -->
+<section class="contact-section">
+  <h2 style="color:#bf360c; margin-bottom:20px;">تواصل معنا</h2>
+  <a href="https://wa.me/96170359935" target="_blank" class="contact-btn btn-wa"><i class="fab fa-whatsapp"></i> اضغط هنا للتواصل عبر واتساب</a>
+  <a href="tel:+9611382472" class="contact-btn btn-ph"><i class="fa-solid fa-phone-flip"></i> اتصل بنا على الرقم الأرضي</a>
+  <a href="https://maps.app.goo.gl/47Fch33imeM5WQxm9" target="_blank" class="contact-btn btn-mp"><i class="fa-solid fa-location-dot"></i> اضغط هنا لرؤية موقعنا على الخريطة</a>
+</section>
+
+<!-- === المساعد الذكي === -->
+<div class="chat-widget-btn" onclick="toggleChat()"><i class="fa-solid fa-robot"></i> اسأل ميدو</div>
+<div class="chat-box" id="chatBox">
+  <div class="chat-header">مساعد ميدو 🤖 <span style="float:left; cursor:pointer;" onclick="toggleChat()">×</span></div>
+  <div class="chat-body" id="chatBody">
+    <div class="bot-msg">أهلاً يا غالي! 👑<br>أنا جاهز ساعدك، نقّي سؤال ولا يهمك 👇</div>
+  </div>
+  <div class="chat-options">
+    <button onclick="askBot('branches')">🏪 كم فرع عندكم؟</button>
+    <button onclick="askBot('meat')">🥩 اللحمة حلال؟</button>
+    <button onclick="askBot('menu')">🍔 المنيو</button>
+    <button onclick="askBot('party')">🎉 طلبية كبيرة</button>
+    <button onclick="askBot('location')">📍 الموقع</button>
+    <button onclick="askBot('hours')">⏰ الدوام</button>
+    <button onclick="askBot('delivery')">🛵 دليفري</button>
+  </div>
+</div>
+
+<script>
+// ============================================
+// ثوابت
+// ============================================
+const RATE = 89000; // سعر الصرف
+const INGREDIENTS_SOUJOUK = ["مايونيز", "خردل", "بندورة", "كبيس", "حامض"];
+const INGREDIENTS_BASTERMA = ["مايونيز", "خردل", "بندورة", "كبيس"];
+const INGREDIENTS_ROSTO = ["مايونيز", "خردل", "بندورة", "كبيس", "خس"];
+const INGREDIENTS_HOTDOG = ["مايونيز", "خردل", "بندورة", "كبيس", "خس", "كاتشب"];
+
+const menuItems = [
+  // --- سندويشات ---
+  { id: 1, type: 'sandwich', name: "سندويش بسترما", price: 400000, img: "https://midomido.neocities.org/bastermaa.jpg", ingredients: INGREDIENTS_BASTERMA },
+  { id: 2, type: 'sandwich', name: "روستو", price: 400000, img: "https://midomido.neocities.org/rostoo.jpg", ingredients: INGREDIENTS_ROSTO },
+  { id: 4, type: 'sandwich', name: "سندويش سجق", price: 350000, img: "https://midomido.neocities.org/soujoukk.jpg", ingredients: INGREDIENTS_SOUJOUK },
+  { id: 5, type: 'sandwich', name: "سندويش مقانق", price: 350000, img: "https://midomido.neocities.org/makanekk.jpg", ingredients: INGREDIENTS_SOUJOUK },
+  { id: 6, type: 'sandwich', name: "سندويش هوت دوغ", price: 300000, img: "https://midomido.neocities.org/hot%20dogg.jpg", ingredients: INGREDIENTS_HOTDOG },
+
+  // --- الكيلو ---
+  { id: 7, type: 'kilo', name: "لحمة بسترما", price: 2400000, img: null },
+  { id: 8, type: 'kilo', name: "لحمة روستو", price: 2400000, img: null },
+  { id: 9, type: 'kilo', name: "لحمة سجق", price: 1300000, img: null },
+  { id: 10, type: 'kilo', name: "لحمة مقانق", price: 1300000, img: null },
+
+  // --- المشروبات ---
+  { id: 11, type: 'drink', name: "بيبسي", price: 80000, img: "https://midomido.neocities.org/mido/%D8%A8%D9%8A%D8%A8%D8%B3%D9%8A.png" },
+  { id: 12, type: 'drink', name: "بيبسي دايت", price: 80000, img: "https://midomido.neocities.org/mido/%D8%A8%D9%8A%D8%A8%D8%B3%D9%8A%20%D8%AF%D8%A7%D9%8A%D8%AA%20-7.jpeg" },
+  { id: 13, type: 'drink', name: "سفن آب", price: 80000, img: "https://midomido.neocities.org/mido/%D8%B3%D9%81%D9%86%20%D8%A7%D8%A8.png" },
+  { id: 14, type: 'drink', name: "سفن آب دايت", price: 80000, img: "https://midomido.neocities.org/mido/%D8%B3%D9%81%D9%86%20%D8%A7%D8%A8%20%D8%AF%D8%A7%D9%8A%D8%AA%20.png" },
+  { id: 15, type: 'drink', name: "ميرندا", price: 80000, img: "https://midomido.neocities.org/mido/%D9%85%D9%8A%D8%B1%D9%86%D8%AF%D8%A7.png" },
+  { id: 16, type: 'drink', name: "لبن عيران", price: 70000, img: "https://midomido.neocities.org/mido/%D9%84%D8%A8%D9%86.png" }
+];
+
+let cart = [];
+let currentItemToCustomize = null;
+let currentKiloItem = null;
+
+// ============================================
+// العرض
+// ============================================
+function renderMenu() {
+  const sandContainer = document.getElementById("sandwichesContainer");
+  const kiloContainer = document.getElementById("kiloContainer");
+  const drinksContainer = document.getElementById("drinksContainer");
+
+  const createProductHTML = (item, btnText, btnAction) => {
+    const usdPrice = (item.price / RATE).toFixed(2);
+    let imgHTML = '';
+    let cardClass = 'product';
+    
+    if (item.type !== 'kilo' && item.img) {
+      imgHTML = `<img src="${item.img}" alt="${item.name}">`;
+    } else if (item.type === 'kilo') {
+      cardClass += ' kilo-item';
+    }
+    
+    return `
+      <div class="${cardClass}">
+        ${imgHTML}
+        <h3>${item.name}</h3>
+        <div class="price-box">
+          <span class="price-lbp">${item.price.toLocaleString('en-US')} ل.ل</span>
+          <span class="price-usd">$${usdPrice}</span>
+        </div>
+        <button class="add-btn" onclick="${btnAct
