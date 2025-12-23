@@ -321,10 +321,10 @@
 <div style="text-align:center;"><div class="category-title">🥤 مشروبات باردة</div></div>
 <div class="products" id="drinksContainer"></div>
 
-<!-- === التواصل === -->
+<!-- === التواصل (تم تحديث الرابط هنا) === -->
 <section class="contact-section">
   <h2 style="color:#bf360c; margin-bottom:20px;">تواصل معنا</h2>
-  <a href="https://wa.me/96170359935" target="_blank" class="contact-btn btn-wa"><i class="fab fa-whatsapp"></i> اضغط هنا للتواصل عبر واتساب</a>
+  <a href="https://api.whatsapp.com/send?phone=96170359935" target="_blank" class="contact-btn btn-wa"><i class="fab fa-whatsapp"></i> اضغط هنا للتواصل عبر واتساب</a>
   <a href="tel:+9611382472" class="contact-btn btn-ph"><i class="fa-solid fa-phone-flip"></i> اتصل بنا على الرقم الأرضي</a>
   <a href="https://maps.app.goo.gl/47Fch33imeM5WQxm9" target="_blank" class="contact-btn btn-mp"><i class="fa-solid fa-location-dot"></i> اضغط هنا لرؤية موقعنا على الخريطة</a>
 </section>
@@ -583,7 +583,10 @@ function sendOrder() {
   let usdTotal = (total / RATE).toFixed(2);
   message += `%0a*المجموع: ${total.toLocaleString()} ل.ل (${usdTotal}$)*`;
   message += "%0a%0a📍 العنوان:";
-  window.open(`https://wa.me/96170359935?text=${message}`, '_blank');
+  
+  // === تم تحديث الرابط هنا ليعمل مع واتساب للأعمال بشكل صحيح ===
+  const url = `https://api.whatsapp.com/send?phone=96170359935&text=${message}`;
+  window.open(url, '_blank');
 }
 
 // ============================================
