@@ -12,7 +12,7 @@ const menuItems = [
   { id:5, type:'sandwich', name:"سندويش مقانق",    price:400000, img:"https://midomido.neocities.org/makanekk.jpg", ingredients:INGREDIENTS_SOUJOUK },
   { id:6, type:'sandwich', name:"سندويش هوت دوغ",  price:350000, img:"https://midomido.neocities.org/hot%20dogg.jpg", ingredients:INGREDIENTS_HOTDOG },
   { id:7,  type:'kilo', name:"لحمة بسترما", price:2400000, img:null, icon:"🥩" },
-  { id:8,  type:'kilo', name:"لحمة روستو",  price:2700000, img:null, icon:"🍖" },
+  { id:8,  type:'kilo', name:"لحمة روستو",  price:2900000, img:null, icon:"🍖" },
   { id:9,  type:'kilo', name:"لحمة سجق",   price:1400000, img:null, icon:"🌭" },
   { id:10, type:'kilo', name:"لحمة مقانق", price:1400000, img:null, icon:"🍗" },
   { id:11, type:'drink', name:"بيبسي",        price:80000, img:"https://midomido.neocities.org/mido/%D8%A8%D9%8A%D8%A8%D8%B3%D9%8A.png" },
