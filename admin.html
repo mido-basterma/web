@@ -216,13 +216,15 @@
         let selectedItemKey = null;
         let currentFilter = 'all';
 
-        // === Helpers ===
-        window.showToast = (msg) => {
+                // === Helpers ===
+        window.showToast = (msg, isError = false) => {
             const t = document.getElementById('toast');
             t.innerText = msg;
+            t.style.background = isError ? 'var(--danger)' : 'var(--green)';
             t.classList.add('show');
             setTimeout(() => t.classList.remove('show'), 2500);
         };
+
 
         // === Navigation & Back Button Logic ===
         window.openView = (id) => {
@@ -258,10 +260,11 @@
             }
         });
 
-        document.getElementById('loginBtn').onclick = () => {
+                document.getElementById('loginBtn').onclick = () => {
             signInWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('password').value)
-                .catch(() => alert('بيانات الدخول غلط!'));
+                .catch(() => showToast('بيانات الدخول غلط يا غالي! ❌', true));
         };
+
 
         // === Data Load & Render ===
         function loadData() {
@@ -322,7 +325,7 @@
                     <div class="sort-badge">${index + 1}</div>
                     <div class="card-img">${visualContent}</div>
                     <div class="card-title">${item.name}</div>
-                    <div class="card-price">${Number(item.price).toLocaleString()} ل.ل</div>
+                    <div class="card-price">${Number(item.price).toLocaleString('en-US')} ل.ل</div>
                 `;
 
                 let timer;
@@ -428,7 +431,7 @@
                 }
             } else { item.img = null; item.icon = null; }
 
-            if(!item.name || !item.price) return alert('الاسم والسعر مطلوبين!');
+            if(!item.name || !item.price) return showToast('الاسم والسعر مطلوبين! ⚠️', true);
 
             if(key && rawData[key]) {
                 item.id = rawData[key].id;
