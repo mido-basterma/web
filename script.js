@@ -1,31 +1,60 @@
-// ===== CONSTANTS =====
-const RATE = 89000;
-const INGREDIENTS_SOUJOUK   = ["مايونيز","خردل","بندورة","كبيس","حامض"];
-const INGREDIENTS_BASTERMA  = ["مايونيز","خردل","بندورة","كبيس"];
-const INGREDIENTS_ROSTO     = ["مايونيز","خردل","بندورة","كبيس","خس"];
-const INGREDIENTS_HOTDOG    = ["مايونيز","خردل","بندورة","كبيس","خس","كاتشب"];
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-const menuItems = [
-  { id:1, type:'sandwich', name:"سندويش بسترما",  price:450000, img:"https://midomido.neocities.org/bastermaa.jpg",  ingredients:INGREDIENTS_BASTERMA, badge:"الأشهر" },
-  { id:2, type:'sandwich', name:"روستو",           price:450000, img:"https://midomido.neocities.org/rostoo.jpg",     ingredients:INGREDIENTS_ROSTO },
-  { id:4, type:'sandwich', name:"سندويش سجق",      price:400000, img:"https://midomido.neocities.org/soujoukk.jpg",  ingredients:INGREDIENTS_SOUJOUK },
-  { id:5, type:'sandwich', name:"سندويش مقانق",    price:400000, img:"https://midomido.neocities.org/makanekk.jpg", ingredients:INGREDIENTS_SOUJOUK },
-  { id:6, type:'sandwich', name:"سندويش هوت دوغ",  price:350000, img:"https://midomido.neocities.org/hot%20dogg.jpg", ingredients:INGREDIENTS_HOTDOG },
-  { id:7,  type:'kilo', name:"لحمة بسترما", price:2700000, img:null, icon:"🥩" },
-  { id:8,  type:'kilo', name:"لحمة روستو",  price:2800000, img:null, icon:"🍖" },
-  { id:9,  type:'kilo', name:"لحمة سجق",   price:1400000, img:null, icon:"🌭" },
-  { id:10, type:'kilo', name:"لحمة مقانق", price:1400000, img:null, icon:"🍗" },
-  { id:11, type:'drink', name:"بيبسي",        price:80000, img:"https://midomido.neocities.org/mido/%D8%A8%D9%8A%D8%A8%D8%B3%D9%8A.png" },
-  { id:12, type:'drink', name:"بيبسي دايت",   price:80000, img:"https://midomido.neocities.org/mido/%D8%A8%D9%8A%D8%A8%D8%B3%D9%8A%20%D8%AF%D8%A7%D9%8A%D8%AA%20-7.jpeg" },
-  { id:13, type:'drink', name:"سفن آب",        price:80000, img:"https://midomido.neocities.org/mido/%D8%B3%D9%81%D9%86%20%D8%A7%D8%A8.png" },
-  { id:14, type:'drink', name:"سفن آب دايت",   price:80000, img:"https://midomido.neocities.org/mido/%D8%B3%D9%81%D9%86%20%D8%A7%D8%A8%20%D8%AF%D8%A7%D9%8A%D8%AA%20.png" },
-  { id:15, type:'drink', name:"ميرندا",         price:80000, img:"https://midomido.neocities.org/mido/%D9%85%D9%8A%D8%B1%D9%86%D8%AF%D8%A7.png" },
-  { id:16, type:'drink', name:"لبن عيران",      price:80000, img:"https://midomido.neocities.org/mido/%D9%84%D8%A8%D9%86.png" }
-];
+const firebaseConfig = {
+    apiKey: "AIzaSyBB_U4C880PW4GxZd8FALv8yBSiP2mNeBY",
+    authDomain: "malaboushi.firebaseapp.com",
+    databaseURL: "https://malaboushi-default-rtdb.firebaseio.com/",
+    projectId: "malaboushi",
+    storageBucket: "malaboushi.firebasestorage.app",
+    messagingSenderId: "110336819350",
+    appId: "1:110336819350:web:2b1b0488e72b811f0602b7"
+};
 
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+let RATE = 89000; // غيرناها من const لـ let لنقدر نعدلها
+let menuItems = [];
 let cart = [];
 let currentItemToCustomize = null;
 let currentKiloItem = null;
+let storePhone = "96170359935"; 
+
+// جلب الإعدادات (أرقام التواصل وسعر الصرف)
+onValue(ref(db, 'settings/contact'), (snapshot) => {
+    const contact = snapshot.val();
+    if (contact) {
+        storePhone = contact.whatsapp || "96170359935"; 
+        const waBtn = document.getElementById('waLinkBtn');
+        const phBtn = document.getElementById('phoneLinkBtn');
+        if(waBtn) waBtn.href = `https://wa.me/${storePhone}`;
+        if(phBtn) phBtn.href = `tel:${contact.phone || '01382472'}`;
+        
+        if (contact.rate && contact.rate !== RATE) {
+            RATE = contact.rate;
+            // إعادة عرض المنيو والسلة لتحديث الأسعار بالدولار فوراً
+            if (menuItems.length > 0) renderMenu();
+            if (cart.length > 0) updateCartUI();
+        }
+    }
+});
+
+// جلب الداتا من فايربيس (مع الترتيب)
+onValue(ref(db, 'menuItems'), (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+        menuItems = Object.keys(data).map(key => ({
+            id: key,
+            ...data[key]
+        }));
+        // ترتيب العناصر بناءً على الحقل order اللي تعدل بالأدمن
+        menuItems.sort((a, b) => (a.order || 0) - (b.order || 0));
+        renderMenu();
+    } else {
+        document.getElementById("sandwichesContainer").innerHTML = '<p style="text-align:center;width:100%;">جاري تحميل المنيو...</p>';
+    }
+});
 
 // ===== RENDER =====
 function renderMenu() {
@@ -33,13 +62,13 @@ function renderMenu() {
   const kiloContainer  = document.getElementById("kiloContainer");
   const drinksContainer = document.getElementById("drinksContainer");
 
-  sandContainer.innerHTML = menuItems.filter(i=>i.type==='sandwich').map(item=>{
+  if(sandContainer) sandContainer.innerHTML = menuItems.filter(i=>i.type==='sandwich').map(item=>{
     const usd = (item.price/RATE).toFixed(2);
     const badge = item.badge ? `<div class="product-badge">⭐ ${item.badge}</div>` : '';
     return `
       <div class="product">
         <div class="product-img-wrap">
-          <img src="${item.img}" alt="${item.name}" loading="lazy">
+          <img src="${item.img || 'https://midomido.neocities.org/bastermaa.jpg'}" alt="${item.name}" loading="lazy">
           ${badge}
         </div>
         <div class="product-body">
@@ -48,14 +77,14 @@ function renderMenu() {
             <span class="price-lbp">${item.price.toLocaleString('en-US')} ل.ل</span>
             <span class="price-usd">$${usd}</span>
           </div>
-          <button class="add-btn" onclick="prepareOrder(${item.id})">
+          <button class="add-btn" onclick="prepareOrder('${item.id}')">
             <i class="fa-solid fa-sliders"></i> اطلب وعدّل
           </button>
         </div>
       </div>`;
   }).join('');
 
-  kiloContainer.innerHTML = menuItems.filter(i=>i.type==='kilo').map(item=>{
+  if(kiloContainer) kiloContainer.innerHTML = menuItems.filter(i=>i.type==='kilo').map(item=>{
     const usd = (item.price/RATE).toFixed(2);
     return `
       <div class="kilo-card">
@@ -65,18 +94,18 @@ function renderMenu() {
           <span class="price-lbp">${item.price.toLocaleString('en-US')} ل.ل / كيلو</span>
           <span class="price-usd">$${usd}</span>
         </div>
-        <button class="add-btn" onclick="openWeightModal(${item.id})">
+        <button class="add-btn" onclick="openWeightModal('${item.id}')">
           <i class="fa-solid fa-weight-scale"></i> حدد الوزن
         </button>
       </div>`;
   }).join('');
 
-  drinksContainer.innerHTML = menuItems.filter(i=>i.type==='drink').map(item=>{
+  if(drinksContainer) drinksContainer.innerHTML = menuItems.filter(i=>i.type==='drink').map(item=>{
     const usd = (item.price/RATE).toFixed(2);
     return `
       <div class="product">
         <div class="product-img-wrap">
-          <img src="${item.img}" alt="${item.name}" loading="lazy">
+          <img src="${item.img || 'https://midomido.neocities.org/mido/%D8%A8%D9%8A%D8%A8%D8%B3%D9%8A.png'}" alt="${item.name}" loading="lazy">
         </div>
         <div class="product-body">
           <h3>${item.name}</h3>
@@ -84,7 +113,7 @@ function renderMenu() {
             <span class="price-lbp">${item.price.toLocaleString('en-US')} ل.ل</span>
             <span class="price-usd">$${usd}</span>
           </div>
-          <button class="add-btn" onclick="addToCartDirect(${item.id})">
+          <button class="add-btn" onclick="addToCartDirect('${item.id}')">
             <i class="fa-solid fa-circle-plus"></i> أضف للسلة
           </button>
         </div>
@@ -95,10 +124,12 @@ function renderMenu() {
 // ===== CART ANIMATION =====
 function triggerCartAnimation() {
   const btn = document.querySelector('.cart-float');
-  btn.classList.remove('cart-added-animation');
-  void btn.offsetWidth;
-  btn.classList.add('cart-added-animation');
-  setTimeout(()=>btn.classList.remove('cart-added-animation'), 600);
+  if(btn) {
+    btn.classList.remove('cart-added-animation');
+    void btn.offsetWidth;
+    btn.classList.add('cart-added-animation');
+    setTimeout(()=>btn.classList.remove('cart-added-animation'), 600);
+  }
 }
 
 // ===== CLEAR CART =====
@@ -166,10 +197,11 @@ function addItemToCart(newItem) {
 
 // ===== SANDWICH =====
 function prepareOrder(id) {
-  const item = menuItems.find(p=>p.id===id);
+  const item = menuItems.find(p=>p.id===id || p.id==id);
   currentItemToCustomize = item;
   const list = document.getElementById("ingredientsList");
-  list.innerHTML = item.ingredients.map(ing=>`
+  let ingredients = item.ingredients || ["مايونيز","خردل","بندورة","كبيس"];
+  list.innerHTML = ingredients.map(ing=>`
     <label class="ingredient-option" id="opt_${ing}">
       <span>${ing}</span>
       <input type="checkbox" value="${ing}" checked onchange="toggleIngredientStyle('opt_${ing}', this.checked)">
@@ -194,7 +226,7 @@ function confirmAddToCart() {
 
 // ===== KILO =====
 function openWeightModal(id) {
-  currentKiloItem = menuItems.find(p=>p.id===id);
+  currentKiloItem = menuItems.find(p=>p.id===id || p.id==id);
   openModal('weightModal');
 }
 
@@ -211,7 +243,7 @@ function selectWeight(grams) {
 
 // ===== DRINKS =====
 function addToCartDirect(id) {
-  const item = menuItems.find(p=>p.id===id);
+  const item = menuItems.find(p=>p.id===id || p.id==id);
   addItemToCart({...item, notes:""});
 }
 
@@ -219,11 +251,7 @@ function addToCartDirect(id) {
 function openModal(id) {
   const m = document.getElementById(id);
   m.style.display = 'flex';
-  
-  requestAnimationFrame(() => {
-    m.classList.add('active');
-  });
-  
+  requestAnimationFrame(() => m.classList.add('active'));
   history.pushState({ modal: id }, null, "#" + id);
 }
 
@@ -270,7 +298,6 @@ function sendOrder() {
     let itemQty = item.qty || 1;
     let itemTotal = item.price * itemQty;
     let qtyText = itemQty > 1 ? ` x${itemQty}` : '';
-    
     message += `${index+1}- ${item.name}${qtyText} ${item.notes}%0a`;
     total += itemTotal;
   });
@@ -279,7 +306,7 @@ function sendOrder() {
   message += `%0a*المجموع: ${total.toLocaleString()} ل.ل (${usdTotal}$)*`;
   message += "%0a%0a📍 العنوان:";
   
-  window.open(`https://wa.me/96170359935?text=${message}`, '_blank');
+  window.open(`https://wa.me/${storePhone}?text=${message}`, '_blank');
 }
 
 // ===== STATUS + COUNTER =====
@@ -289,10 +316,12 @@ function checkStatus() {
   const h = d.getHours(), m = d.getMinutes();
   const open = (h>10||(h===10&&m>=0)) && (h<23||(h===23&&m<=30));
   const box = document.getElementById("statusBox");
-  box.innerHTML = open
-    ? `<span class="status-dot"></span>🟢 مفتوح الآن (اطلب دليفري)`
-    : `<span class="status-dot"></span>🔴 مغلق الآن (نفتح 10 ص)`;
-  box.className = open ? 'open' : 'closed';
+  if(box) {
+      box.innerHTML = open
+        ? `<span class="status-dot"></span>🟢 مفتوح الآن (اطلب دليفري)`
+        : `<span class="status-dot"></span>🔴 مغلق الآن (نفتح 10 ص)`;
+      box.className = open ? 'open' : 'closed';
+  }
 }
 
 function updateVisitorCounter() {
@@ -310,7 +339,8 @@ function updateVisitorCounter() {
   let final = BASE_COUNT+acc;
   const key='mido_visited_today';
   if(localStorage.getItem(key)!==today.toDateString()){final++;localStorage.setItem(key,today.toDateString());}
-  document.getElementById('counter').innerHTML = `👑 عدد الزوار: <span>${final.toLocaleString('en-US')}</span>`;
+  const counterDiv = document.getElementById('counter');
+  if(counterDiv) counterDiv.innerHTML = `👑 عدد الزوار: <span>${final.toLocaleString('en-US')}</span>`;
 }
 
 // ===== CHAT =====
@@ -335,7 +365,6 @@ function askBot(t) {
   setTimeout(()=>{ b.innerHTML += `<div class="bot-msg">${r}</div>`; b.scrollTop=b.scrollHeight; }, 600);
 }
 
-// ===== CLICK OUTSIDE TO CLOSE =====
 window.onclick = function(event) {
   ['customizeModal','cartModal','clearCartModal','emptyAlertModal','weightModal'].forEach(id=>{
     const m = document.getElementById(id);
@@ -343,14 +372,35 @@ window.onclick = function(event) {
   });
 };
 
-// ===== SCROLL TO TOP BUTTON =====
 window.addEventListener('scroll', ()=>{
-  document.getElementById('scrollTop').classList.toggle('visible', window.scrollY > 300);
+  const scrollBtn = document.getElementById('scrollTop');
+  if(scrollBtn) scrollBtn.classList.toggle('visible', window.scrollY > 300);
 });
 
-// ===== INIT =====
-renderMenu();
 checkStatus();
 updateVisitorCounter();
 setInterval(updateVisitorCounter, 3600000);
 setInterval(checkStatus, 60000);
+
+// ===== ربط الفنكشنات بالـ Window لتشتغل من الـ HTML =====
+window.renderMenu = renderMenu;
+window.prepareOrder = prepareOrder;
+window.openWeightModal = openWeightModal;
+window.addToCartDirect = addToCartDirect;
+window.openModal = openModal;
+window.closeModal = closeModal;
+window.openClearCartModal = openClearCartModal;
+window.closeClearCartModal = closeClearCartModal;
+window.confirmClearCart = confirmClearCart;
+window.closeEmptyAlertModal = closeEmptyAlertModal;
+window.updateCartUI = updateCartUI;
+window.removeFromCart = removeFromCart;
+window.toggleIngredientStyle = toggleIngredientStyle;
+window.confirmAddToCart = confirmAddToCart;
+window.closeWeightModal = closeWeightModal;
+window.selectWeight = selectWeight;
+window.toggleCart = toggleCart;
+window.closeCustomizeModal = closeCustomizeModal;
+window.sendOrder = sendOrder;
+window.toggleChat = toggleChat;
+window.askBot = askBot;
