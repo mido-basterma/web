@@ -260,7 +260,7 @@
 
         document.getElementById('loginBtn').onclick = () => {
             signInWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('password').value)
-                .catch(() => alert('بيانات الدخول غلط!'));
+                .catch((err) => alert("الخطأ من فايربيس: " + err.message));
         };
 
         // === Data Load & Render ===
