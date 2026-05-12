@@ -86,9 +86,12 @@ function renderMenu() {
 
   if(kiloContainer) kiloContainer.innerHTML = menuItems.filter(i=>i.type==='kilo').map(item=>{
     const usd = (item.price/RATE).toFixed(2);
+    // هون ضفنا شرط: إذا في صورة اعرضها، وإذا لأ اعرض الإيموجي
+    const visual = item.img ? `<img src="${item.img}" style="width: 80px; height: 80px; object-fit: contain;">` : `<div class="kilo-icon">${item.icon||'⚖️'}</div>`;
+    
     return `
       <div class="kilo-card">
-        <div class="kilo-icon">${item.icon||'⚖️'}</div>
+        ${visual}
         <h3>${item.name}</h3>
         <div class="price-box" style="width:100%;">
           <span class="price-lbp">${item.price.toLocaleString('en-US')} ل.ل / كيلو</span>
