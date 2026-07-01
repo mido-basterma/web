@@ -28,7 +28,7 @@ onValue(ref(db, 'settings/contact'), (snapshot) => {
         storePhone = contact.whatsapp || "96170359935"; 
         const waBtn = document.getElementById('waLinkBtn');
         const phBtn = document.getElementById('phoneLinkBtn');
-        if(waBtn) waBtn.href = `https://wa.me/${storePhone}`;
+        if(waBtn) waBtn.href = `whatsapp://send?phone=${storePhone}`;
         if(phBtn) phBtn.href = `tel:${contact.phone || '01382472'}`;
         
         if (contact.rate && contact.rate !== RATE) {
@@ -309,7 +309,7 @@ function sendOrder() {
   message += `%0a*المجموع: ${total.toLocaleString()} ل.ل (${usdTotal}$)*`;
   message += "%0a%0a📍 العنوان:";
   
-  window.open(`https://wa.me/${storePhone}?text=${message}`, '_blank');
+  window.location.href = `whatsapp://send?phone=${storePhone}&text=${message}`;
 }
 
 // ===== STATUS + COUNTER =====
