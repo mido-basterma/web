@@ -2,13 +2,13 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebas
 import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyBB_U4C880PW4GxZd8FALv8yBSiP2mNeBY",
-    authDomain: "malaboushi.firebaseapp.com",
-    databaseURL: "https://malaboushi-default-rtdb.firebaseio.com/",
-    projectId: "malaboushi",
-    storageBucket: "malaboushi.firebasestorage.app",
-    messagingSenderId: "110336819350",
-    appId: "1:110336819350:web:2b1b0488e72b811f0602b7"
+    apiKey: "AIzaSyB3g8Hod4iVtciM4eyWZWCZnxJJAPHr75o",
+    authDomain: "mido-basterma.firebaseapp.com",
+    databaseURL: "https://mido-basterma-default-rtdb.firebaseio.com",
+    projectId: "mido-basterma",
+    storageBucket: "mido-basterma.firebasestorage.app",
+    messagingSenderId: "561976098166",
+    appId: "1:561976098166:web:8aa5f1f6af3ebc900d4e57"
 };
 
 const app = initializeApp(firebaseConfig);
