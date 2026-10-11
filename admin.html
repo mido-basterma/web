@@ -691,16 +691,17 @@
             
             if (!bgImg.src.includes('?v=')) bgImg.src = 'menu_bg.png?v=' + new Date().getTime();
             
-            // إعدادات مستقرة 100% لإظهار الصورة في الهواتف مهما كان حجم الشاشة
-            container.style.position = 'absolute';
-            container.style.left = '0';
-            container.style.top = '0';
+            // التعديل الجذري: جعل العنصر يتصرف كعنصر حقيقي داخل مساحة العمل وليس مخفياً
+            container.style.position = 'relative';
+            container.style.left = 'auto';
+            container.style.top = 'auto';
             container.style.zIndex = '1';
             
-            // الاعتماد على نقطة الصفر (يسار-أعلى) يمنع طيران الصورة خارج الشاشة
-            let scaleVal = window.innerWidth / 1920; 
-            container.style.transform = `scale(${scaleVal})`;
-            container.style.transformOrigin = 'top left'; 
+            // استخدام zoom بسيط لحساب حجم الشاشة
+            let scaleVal = (window.innerWidth - 20) / 1920; 
+            container.style.zoom = scaleVal;
+            // إلغاء خصائص transform التي سببت المشكلة
+            container.style.transform = 'none'; 
             
             workspace.innerHTML = '';
             workspace.appendChild(container);
@@ -729,10 +730,11 @@
             setTimeout(() => modal.style.display = 'none', 300);
             
             const container = document.getElementById('export-container');
+            // إعادة الصورة لحجمها الطبيعي ومكانها المخفي لكي يتم تصويرها بشكل صحيح لاحقاً
             container.style.position = 'absolute';
             container.style.left = '-9999px';
             container.style.top = '-9999px';
-            container.style.transform = 'none'; // إعادة الصورة لحجمها الطبيعي قبل التصوير
+            container.style.zoom = '1'; 
             document.body.appendChild(container);
             
             if(selectedEl) selectedEl.style.border = 'none';
