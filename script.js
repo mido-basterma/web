@@ -281,6 +281,7 @@ function toggleCart() {
 }
 
 window.addEventListener('popstate', function(event) {
+  // إغلاق أي نافذة عادية
   ['customizeModal','cartModal','clearCartModal','emptyAlertModal','weightModal'].forEach(id => {
     const m = document.getElementById(id);
     if (m && m.classList.contains('active')) {
@@ -288,6 +289,12 @@ window.addEventListener('popstate', function(event) {
       m.style.display = 'none';
     }
   });
+  
+  // إغلاق نافذة الدردشة إذا كانت مفتوحة
+  const chatBox = document.getElementById("chatBox");
+  if (chatBox && chatBox.classList.contains('open')) {
+    chatBox.classList.remove('open');
+  }
 });
 
 // ===== SEND ORDER =====
@@ -350,7 +357,15 @@ let chatHistory = [];
 
 function toggleChat() {
   const box = document.getElementById("chatBox");
-  box.classList.toggle('open');
+  
+  if (box.classList.contains('open')) {
+    // إذا كانت مفتوحة، إغلاقها عبر الرجوع بالتاريخ
+    history.back();
+  } else {
+    // إذا كانت مغلقة، فتحها وإضافة حالة للتاريخ
+    box.classList.add('open');
+    history.pushState({ modal: 'chatBox' }, null, "#chatBox");
+  }
 }
 
 function sendPredefined(text) {
@@ -384,7 +399,7 @@ async function sendUserMsg() {
   b.scrollTop = b.scrollHeight;
 }
 
-async function callGeminiAPI(userText) {
+async function callGeminiAPI(userText, base64Audio = null, mimeType = null) {
   if (!geminiApiKey) {
       return "عذراً يا غالي، المساعد الذكي متوقف حالياً. لازم الإدارة تضيف المفتاح من صفحة الأدمن أولاً.";
   }
@@ -415,7 +430,19 @@ async function callGeminiAPI(userText) {
       chatHistory.push({ role: "model", parts: [{ text: "يا هلا فيك! أنا جاهز أستقبل طلبات الزباين وأرد عليهم." }] });
   }
 
-  chatHistory.push({ role: "user", parts: [{ text: userText }] });
+  let userParts = [];
+  if (userText) userParts.push({ text: userText });
+  if (base64Audio) {
+      let cleanMime = mimeType ? mimeType.split(';')[0] : "audio/webm";
+      userParts.push({
+          inlineData: {
+              mimeType: cleanMime,
+              data: base64Audio
+          }
+      });
+  }
+
+  chatHistory.push({ role: "user", parts: userParts });
 
   try {
       const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent?key=${geminiApiKey}`, {
@@ -440,42 +467,84 @@ async function callGeminiAPI(userText) {
   }
 }
 
-// ===== VOICE RECOGNITION =====
-function startVoiceRecognition() {
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SpeechRecognition) {
-    alert("متصفحك ما بيدعم ميزة الصوت يا غالي، جرب من جوجل كروم.");
-    return;
-  }
-  const recognition = new SpeechRecognition();
-  recognition.lang = 'ar-LB'; // اللهجة اللبنانية
-  recognition.interimResults = false;
-  
+// ===== NATIVE VOICE RECORDING =====
+let mediaRecorder;
+let audioChunks = [];
+let isRecording = false;
+
+async function toggleRecording() {
   const micBtn = document.getElementById("micBtn");
   const inputEl = document.getElementById("chatInput");
-  
-  recognition.onstart = function() {
-    if(micBtn) micBtn.classList.add("recording");
-    if(inputEl) inputEl.placeholder = "عم اسمعك، احكي...";
-  };
-  
-  recognition.onspeechend = function() {
-    recognition.stop();
-  };
-  
-  recognition.onresult = function(event) {
-    const transcript = event.results[0][0].transcript;
-    if(inputEl) inputEl.value = transcript;
-    if(micBtn) micBtn.classList.remove("recording");
-    if(inputEl) inputEl.placeholder = "اكتب سؤالك أو احكي...";
-  };
-  
-  recognition.onerror = function(event) {
-    if(micBtn) micBtn.classList.remove("recording");
-    if(inputEl) inputEl.placeholder = "اكتب سؤالك أو احكي...";
-  };
-  
-  recognition.start();
+
+  if (isRecording) {
+    // إيقاف التسجيل وإرسال الملف
+    mediaRecorder.stop();
+    micBtn.classList.remove("recording");
+    inputEl.placeholder = "جاري إرسال مقطع الصوت... 🚀";
+    isRecording = false;
+    return;
+  }
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(stream);
+    audioChunks = [];
+
+    mediaRecorder.ondataavailable = event => {
+      if (event.data.size > 0) audioChunks.push(event.data);
+    };
+
+    mediaRecorder.onstop = async () => {
+      const audioBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType });
+      const audioUrl = URL.createObjectURL(audioBlob); // إنشاء رابط قابل للتشغيل للصوت
+      
+      const reader = new FileReader();
+      reader.readAsDataURL(audioBlob);
+      reader.onloadend = async () => {
+        const base64Audio = reader.result.split(',')[1];
+        const mimeType = audioBlob.type;
+
+        const b = document.getElementById("chatBody");
+        
+        // إضافة مشغل الصوت داخل المحادثة
+        b.innerHTML += `
+          <div class="user-msg" style="display:flex; flex-direction:column; gap:5px; align-items:flex-end; min-width: 220px;">
+            <span style="font-size:0.85em; font-weight:bold;">🎤 رسالتك الصوتية:</span>
+            <audio controls src="${audioUrl}" style="width: 100%; height: 35px; outline: none;"></audio>
+          </div>`;
+        b.scrollTop = b.scrollHeight;
+
+        const options = document.getElementById("chatOptions");
+        if(options) options.style.display = "none";
+
+        inputEl.placeholder = "اكتب سؤالك أو احكي...";
+
+        const typingId = "typing_" + Date.now();
+        b.innerHTML += `<div class="bot-msg" id="${typingId}">المساعد عم يسمع الفويس... 🎧</div>`;
+        b.scrollTop = b.scrollHeight;
+
+        const botReply = await callGeminiAPI("", base64Audio, mimeType);
+
+        document.getElementById(typingId).remove();
+        let formattedReply = botReply.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        formattedReply = formattedReply.replace(/\n/g, '<br>');
+        b.innerHTML += `<div class="bot-msg">${formattedReply}</div>`;
+        b.scrollTop = b.scrollHeight;
+      };
+      
+      // تحرير المايكروفون
+      stream.getTracks().forEach(track => track.stop());
+    };
+
+    mediaRecorder.start();
+    isRecording = true;
+    micBtn.classList.add("recording");
+    inputEl.placeholder = "عم سجل... اكبس المايك مرة تانية لتبعت 🎤";
+
+  } catch (err) {
+    alert("ما قدرنا نوصل للمايكروفون يا غالي، تأكد إنك عاطي الصلاحية للمتصفح.");
+    console.error(err);
+  }
 }
 
 window.onclick = function(event) {
@@ -518,4 +587,4 @@ window.sendOrder = sendOrder;
 window.toggleChat = toggleChat;
 window.sendPredefined = sendPredefined;
 window.sendUserMsg = sendUserMsg;
-window.startVoiceRecognition = startVoiceRecognition;
+window.toggleRecording = toggleRecording;

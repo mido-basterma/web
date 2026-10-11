@@ -212,7 +212,7 @@
     <button onclick="sendPredefined('أريد تفاصيل الدليفري')">🛵 دليفري</button>
   </div>
   <div class="chat-input-area">
-    <button class="chat-mic-btn" id="micBtn" onclick="startVoiceRecognition()">
+    <button class="chat-mic-btn" id="micBtn" onclick="toggleRecording()">
       <i class="fa-solid fa-microphone"></i>
     </button>
     <input type="text" id="chatInput" placeholder="اكتب سؤالك أو احكي..." onkeypress="if(event.key === 'Enter') sendUserMsg()">
