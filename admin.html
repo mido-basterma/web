@@ -201,7 +201,7 @@
     </div>
 
     <!-- Template for Menu Image Export -->
-    <div id="export-container" style="position: absolute; left: -9999px; top: -9999px; width: 1920px; height: 1080px; font-family: 'Cairo', sans-serif; direction: rtl; overflow: hidden; background-color: #fff;">
+    <div id="export-container" style="position: absolute; left: -9999px; top: -9999px; width: 1920px; height: 1080px; font-family: 'Cairo', sans-serif; direction: ltr; overflow: hidden; background-color: #fff;">
         <!-- تم إضافة id للصورة ليتم كسر الكاش برمجياً -->
         <img id="menuBgImg" src="menu_bg.png" style="position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; z-index: -1; object-fit: cover;" crossorigin="anonymous">
         <style>
@@ -255,28 +255,30 @@
         <div class="export-price drink-price" id="p_drink_water">0</div>
     </div>
 
-    <!-- واجهة التعديل المباشر (النسخة المتوافقة مع الجوال) -->
-    <div class="modal" id="editorModal" style="background: #111; padding: 0; display: none; flex-direction: column; height: 100vh; width: 100%; overflow: hidden;">
-        <!-- لوحة التحكم الثابتة بالأعلى -->
-        <div style="background: #222; padding: 15px; z-index: 10000; box-shadow: 0 4px 15px rgba(0,0,0,0.8); flex-shrink: 0; width: 100%;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <h3 style="color: var(--gold); font-size: 1rem; margin: 0;">👁️ المحرر البصري للأسعار</h3>
+    <!-- واجهة التعديل المباشر (نظام معرض الصور) -->
+    <div class="modal" id="editorModal" style="background: #111; padding: 0; display: none; width: 100%; height: 100vh; position: fixed; top: 0; left: 0; z-index: 5000;">
+        
+        <!-- مساحة عرض الصورة (قابلة للسحب والتمرير بالأصابع) -->
+        <div id="editorWorkspace" style="width: 100%; height: 100%; overflow: auto; -webkit-overflow-scrolling: touch; position: relative; background: #000;">
+            <!-- سيتم وضع الصورة هنا بحجمها الطبيعي -->
+        </div>
+
+        <!-- لوحة التحكم العائمة (Floating Controls) فوق الصورة -->
+        <div style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; background: rgba(34, 34, 34, 0.95); backdrop-filter: blur(10px); padding: 15px; border-radius: 20px; z-index: 10000; box-shadow: 0 10px 30px rgba(0,0,0,0.8); border: 1px solid rgba(255,255,255,0.1);">
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <h3 style="color: var(--gold); font-size: 0.9rem; margin: 0;">حدد أي رقم للتحكم به</h3>
                 <button onclick="closeEditorModal()" style="background: none; border: none; color: #ff4757; font-size: 1.5rem; cursor: pointer;"><i class="fas fa-times-circle"></i></button>
             </div>
-            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;">
-                <button onclick="moveSelected(0, -5)" style="padding:10px 5px; background:#444; color:white; border:none; border-radius:8px; font-weight:bold; font-size:0.9rem;">⬆️ فوق</button>
-                <button onclick="moveSelected(0, 5)" style="padding:10px 5px; background:#444; color:white; border:none; border-radius:8px; font-weight:bold; font-size:0.9rem;">⬇️ تحت</button>
-                <button onclick="moveSelected(5, 0)" style="padding:10px 5px; background:#444; color:white; border:none; border-radius:8px; font-weight:bold; font-size:0.9rem;">➡️ يمين</button>
-                <button onclick="moveSelected(-5, 0)" style="padding:10px 5px; background:#444; color:white; border:none; border-radius:8px; font-weight:bold; font-size:0.9rem;">⬅️ يسار</button>
+            
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 10px;">
+                <button onclick="moveSelected(0, -2)" style="padding:12px 5px; background:#444; color:white; border:none; border-radius:10px; font-weight:bold; font-size:1.1rem;">⬆️</button>
+                <button onclick="moveSelected(0, 2)" style="padding:12px 5px; background:#444; color:white; border:none; border-radius:10px; font-weight:bold; font-size:1.1rem;">⬇️</button>
+                <button onclick="moveSelected(2, 0)" style="padding:12px 5px; background:#444; color:white; border:none; border-radius:10px; font-weight:bold; font-size:1.1rem;">➡️</button>
+                <button onclick="moveSelected(-2, 0)" style="padding:12px 5px; background:#444; color:white; border:none; border-radius:10px; font-weight:bold; font-size:1.1rem;">⬅️</button>
             </div>
-            <button onclick="savePositions()" style="width: 100%; padding: 12px; margin-top: 10px; background: var(--green); color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 1.1rem;">✅ حفظ ونسخ الإحداثيات</button>
-        </div>
-        
-        <!-- مساحة الصورة المصغرة لتناسب الجوال -->
-        <div style="flex: 1; overflow: hidden; position: relative; background: #000; width: 100%; display: flex; justify-content: center; align-items: flex-start; padding-top: 20px;">
-            <div id="editorWorkspace" style="position: relative;">
-                <!-- سيتم وضع الصورة هنا برمجياً -->
-            </div>
+            
+            <button onclick="savePositions()" style="width: 100%; padding: 12px; background: linear-gradient(135deg, var(--green), #27ae60); color: white; border: none; border-radius: 10px; font-weight: bold; font-size: 1rem; box-shadow: 0 4px 15px rgba(46, 213, 115, 0.4);">✅ حفظ الأماكن الجديدة</button>
         </div>
     </div>
 
@@ -586,7 +588,7 @@
                 return item ? item.price.toLocaleString('en-US') : defaultPrice.toLocaleString('en-US');
             };
 
-            // وضع القيم في أماكنها
+            // جلب القيم من الداتا بيز
             document.getElementById('p_sand_basterma').innerText = getPrice('sandwich', 'بسترما', 500000);
             document.getElementById('p_sand_rosto').innerText = getPrice('sandwich', 'روستو', 500000);
             document.getElementById('p_sand_soujouk').innerText = getPrice('sandwich', 'سجق', 400000);
@@ -603,7 +605,7 @@
             document.getElementById('p_drink_ayran').innerText = getPrice('drink', 'عيران', 80000);
             document.getElementById('p_drink_water').innerText = getPrice('drink', 'ماء', 30000);
 
-            // استرجاع الإحداثيات المحفوظة في الذاكرة (لتطبيق تعديلاتك المباشرة)
+            // ⚠️ استرجاع الإحداثيات التي قمت أنت بحفظها في المحرر البصري لتطبيقها قبل التصوير ⚠️
             document.querySelectorAll('.export-price').forEach(el => {
                 let savedPos = localStorage.getItem('pos_' + el.id);
                 if (savedPos) {
@@ -625,11 +627,14 @@
             container.style.zIndex = '-100'; 
 
             setTimeout(() => {
+                // إجبار المكتبة على التصوير بأبعاد ثابتة تمنع أي تشوه مهما كان حجم الجوال
                 html2canvas(container, { 
                     scale: 2, 
                     useCORS: true, 
                     width: 1920, 
-                    height: 1080 
+                    height: 1080,
+                    windowWidth: 1920,  /* خدعة لبرمجة المتصفح كأنه شاشة كمبيوتر كبيرة */
+                    windowHeight: 1080
                 }).then(canvas => {
                     container.style.left = '-9999px'; 
                     
@@ -646,13 +651,13 @@
             }, 1500); 
         };
 
-        // ===== المحرر البصري المباشر (المطور والمستقر) =====
+        // ===== المحرر البصري المباشر (نظام المعرض الحر) =====
         let selectedEl = null;
 
         window.openVisualEditor = () => {
             closeAllViews();
             const modal = document.getElementById('editorModal');
-            modal.style.display = 'flex'; 
+            modal.style.display = 'block'; 
             requestAnimationFrame(() => modal.classList.add('active'));
             
             const getPrice = (type, keyword, defaultPrice = 0) => {
@@ -691,17 +696,13 @@
             
             if (!bgImg.src.includes('?v=')) bgImg.src = 'menu_bg.png?v=' + new Date().getTime();
             
-            // التعديل الجذري: جعل العنصر يتصرف كعنصر حقيقي داخل مساحة العمل وليس مخفياً
-            container.style.position = 'relative';
-            container.style.left = 'auto';
-            container.style.top = 'auto';
+            // تحويل القالب إلى صورة حرة يمكن تمريرها داخل المعرض
+            container.style.position = 'absolute';
+            container.style.left = '0';
+            container.style.top = '0';
             container.style.zIndex = '1';
-            
-            // استخدام zoom بسيط لحساب حجم الشاشة
-            let scaleVal = (window.innerWidth - 20) / 1920; 
-            container.style.zoom = scaleVal;
-            // إلغاء خصائص transform التي سببت المشكلة
             container.style.transform = 'none'; 
+            container.style.zoom = 'normal'; 
             
             workspace.innerHTML = '';
             workspace.appendChild(container);
@@ -710,8 +711,8 @@
                 el.onclick = function() {
                     if(selectedEl) selectedEl.style.border = 'none';
                     selectedEl = this;
-                    selectedEl.style.border = '4px dashed #2ed573';
-                    showToast('تم التحديد! استخدم الأزرار للتحريك 👇');
+                    selectedEl.style.border = '6px dashed #2ed573';
+                    showToast('تم التحديد!');
                 }
             });
         };
@@ -730,11 +731,9 @@
             setTimeout(() => modal.style.display = 'none', 300);
             
             const container = document.getElementById('export-container');
-            // إعادة الصورة لحجمها الطبيعي ومكانها المخفي لكي يتم تصويرها بشكل صحيح لاحقاً
             container.style.position = 'absolute';
             container.style.left = '-9999px';
             container.style.top = '-9999px';
-            container.style.zoom = '1'; 
             document.body.appendChild(container);
             
             if(selectedEl) selectedEl.style.border = 'none';
