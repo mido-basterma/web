@@ -14,15 +14,15 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-let RATE = 89000;
+let RATE = 89000; 
 let menuItems = [];
 let cart = [];
 let currentItemToCustomize = null;
 let currentKiloItem = null;
 let storePhone = "96170359935"; 
-let geminiApiKey = ""; // سيتم جلبه من الإعدادات بأدمن الموقع
+let geminiApiKey = ""; // لحفظ مفتاح الذكاء الاصطناعي
 
-// جلب الإعدادات (أرقام التواصل وسعر الصرف ومفتاح الذكاء الاصطناعي)
+// جلب الإعدادات (أرقام التواصل وسعر الصرف ومفتاح AI)
 onValue(ref(db, 'settings/contact'), (snapshot) => {
     const contact = snapshot.val();
     if (contact) {
@@ -123,7 +123,6 @@ function renderMenu() {
   }).join('');
 }
 
-// ===== CART ANIMATION =====
 function triggerCartAnimation() {
   const btn = document.querySelector('.cart-float');
   if(btn) {
@@ -134,7 +133,6 @@ function triggerCartAnimation() {
   }
 }
 
-// ===== CLEAR CART =====
 function openClearCartModal() {
   if(cart.length===0){ openModal('emptyAlertModal'); return; }
   openModal('clearCartModal');
@@ -143,7 +141,6 @@ function closeClearCartModal() { closeModal('clearCartModal'); }
 function closeEmptyAlertModal() { closeModal('emptyAlertModal'); }
 function confirmClearCart() { cart=[]; updateCartUI(); closeClearCartModal(); }
 
-// ===== CART UI =====
 function updateCartUI() {
   let totalItems = cart.reduce((sum, item) => sum + (item.qty || 1), 0);
   document.getElementById("cartCount").innerText = totalItems;
@@ -197,7 +194,6 @@ function addItemToCart(newItem) {
   triggerCartAnimation();
 }
 
-// ===== SANDWICH =====
 function prepareOrder(id) {
   const item = menuItems.find(p=>p.id===id || p.id==id);
   currentItemToCustomize = item;
@@ -226,7 +222,6 @@ function confirmAddToCart() {
   closeCustomizeModal();
 }
 
-// ===== KILO =====
 function openWeightModal(id) {
   currentKiloItem = menuItems.find(p=>p.id===id || p.id==id);
   openModal('weightModal');
@@ -243,13 +238,11 @@ function selectWeight(grams) {
   closeWeightModal();
 }
 
-// ===== DRINKS =====
 function addToCartDirect(id) {
   const item = menuItems.find(p=>p.id===id || p.id==id);
   addItemToCart({...item, notes:""});
 }
 
-// ===== MODAL HELPERS =====
 function openModal(id) {
   const m = document.getElementById(id);
   m.style.display = 'flex';
@@ -280,24 +273,6 @@ function toggleCart() {
   }
 }
 
-window.addEventListener('popstate', function(event) {
-  // إغلاق أي نافذة عادية
-  ['customizeModal','cartModal','clearCartModal','emptyAlertModal','weightModal'].forEach(id => {
-    const m = document.getElementById(id);
-    if (m && m.classList.contains('active')) {
-      m.classList.remove('active');
-      m.style.display = 'none';
-    }
-  });
-  
-  // إغلاق نافذة الدردشة إذا كانت مفتوحة
-  const chatBox = document.getElementById("chatBox");
-  if (chatBox && chatBox.classList.contains('open')) {
-    chatBox.classList.remove('open');
-  }
-});
-
-// ===== SEND ORDER =====
 function sendOrder() {
   if(cart.length === 0){ openModal('emptyAlertModal'); return; }
   let message = "مرحبا ميدو، طلبي هو:%0a%0a";
@@ -318,7 +293,6 @@ function sendOrder() {
   window.location.href = `whatsapp://send?phone=${storePhone}&text=${message}`;
 }
 
-// ===== STATUS + COUNTER =====
 function checkStatus() {
   const now = new Date().toLocaleString("en-US",{timeZone:"Asia/Beirut"});
   const d = new Date(now);
@@ -357,12 +331,9 @@ let chatHistory = [];
 
 function toggleChat() {
   const box = document.getElementById("chatBox");
-  
   if (box.classList.contains('open')) {
-    // إذا كانت مفتوحة، إغلاقها عبر الرجوع بالتاريخ
-    history.back();
+    history.back(); // إغلاق المحادثة بزر الرجوع
   } else {
-    // إذا كانت مغلقة، فتحها وإضافة حالة للتاريخ
     box.classList.add('open');
     history.pushState({ modal: 'chatBox' }, null, "#chatBox");
   }
@@ -404,42 +375,41 @@ async function callGeminiAPI(userText, base64Audio = null, mimeType = null) {
       return "عذراً يا غالي، المساعد الذكي متوقف حالياً. لازم الإدارة تضيف المفتاح من صفحة الأدمن أولاً.";
   }
   
-  let menuText = menuItems.map(i => `${i.name} (${i.price.toLocaleString('en-US')} ل.ل)`).join('، ');
+  let menuText = menuItems.map(i => `${i.name}`).join(' | ');
   
   const systemPrompt = `أنت المساعد الشخصي لمطعم "ميدو ملك البسترما".
 معلومات المطعم:
-- فرع الشياح طريق صيدا القديمة، مبنى سنتر دالاس بعد حلويات صدقة (منذ 2009).
-- الفرع الأساسي في خلدة (منذ 1990)، وفرع الجية (منذ 2024).
-- اللحم حلال 100%. نبيع بالكيلو وبسندويشات. كل شيء بالكيلو يغلف بالفاكيوم للسفر.
-- أصناف السندويشات: بسترما، روستو، سجق، مقانق، هوت دوغ، روستو مع جبنة.
-- أصناف الكيلو: بسترما، روستو، سجق، مقانق. الخبز افرنجي فقط.
-- مكونات السندويشات: بندورة، كبيس مأتة، مايونيز، وخردل. يُضاف حامض للسجق والمقانق، وخس للروستو. الحر عالطلب.
-- لا يوجد شاورما أو بطاطا. لا علاقة لنا بمطاعم مانو وبيدو.
-- سعر الصرف المعتمد حالياً: ${RATE} ليرة.
-- قائمة الأسعار الحالية المتوفرة لدينا: ${menuText}.
+- فرع الشياح، طريق صيدا القديمة، مبنى سنتر دالاس بعد حلويات صدقة.
+- الفرع الأساسي في خلدة، وفرع الجية.
+- اللحم حلال 100%. نبيع بالكيلو وبالسندويشات. كل شيء بالكيلو يغلف بالفاكيوم للسفر.
+- أصناف السندويشات: بسترما، روستو، سجق، مقانق، هوت دوغ، روستو مع جبنة. الخبز افرنجي فقط.
+- المكونات الثابتة للسندويشات: بندورة، كبيس مأتة، مايونيز، وخردل. يُضاف حامض للسجق والمقانق، وخس للروستو. الحر حسب الطلب.
+- لا يوجد شاورما أو بطاطا مقلية. لا علاقة لنا بمطاعم مانو وبيدو في برج حمود.
+- قائمة الأصناف المتوفرة لدينا: ${menuText}.
 
-تعليماتك الصارمة:
+تعليماتك الصارمة والأساسية:
 - اسمك "مساعد الـ Ai".
-- تحدث بلهجة لبنانية بحتة، مرحة ومحببة (استخدم: تكرم عينك، يا هلا، شو بتأمر، من عيوني).
-- أجب باختصار ومباشرة جداً. لا تثرثر.
-- إذا أراد الزبون تقديم طلب، اسأله عن التفاصيل بوضوح (الكمية أو الإضافات)، ولما يتأكد، ولّد هذا الرابط ليقوم بإرسال الطلب لنا:
-<a href="whatsapp://send?phone=96170359935&text=مرحبا%20ميدو،%20طلبي%20من%20المساعد%20الذكي%20هو:%0A[اكتب هنا تفاصيل الطلب والمجموع]" style="background:#25d366;color:white;padding:10px;border-radius:10px;text-decoration:none;display:inline-block;margin-top:10px;font-weight:bold;text-align:center;">📲 إرسال الطلب عبر واتساب</a>`;
+- تحدث باللهجة اللبنانية المحكية البيضاء، بأسلوب لطيف، مرح، وخالٍ تماماً من أي أخطاء لغوية أو إملائية (استخدم عبارات مثل: تكرم عينك، يا هلا، شو بتأمر، من عيوني).
+- أجب باختصار ومباشرة. اسأل الزبون عن الكميات والإضافات بوضوح.
+- تنبيه برمجي حاسم: أنت لست آلة حاسبة! ممنوع نهائياً أن تحسب المجموع للزبون.
+- عندما يكتمل الطلب ويؤكده الزبون، قم بالرد برسالة ترحيبية قصيرة، ثم اكتب في نهاية رسالتك الكود السري التالي بالضبط (بدون أي مسافات زائدة) لكي يقوم النظام بحساب الفاتورة بدقة:
+$$ORDER:اسم الصنف=الكمية,اسم الصنف=الكمية$$
+
+مثال عملي:
+إذا طلب الزبون 2 سندويش روستو و 1 بيبسي، اكتب في آخر كلامك:
+$$ORDER:سندويش روستو=2,بيبسي=1$$
+ملاحظة: تأكد من كتابة أسماء الأصناف في الكود السري مطابقة تماماً للقائمة المذكورة أعلاه.`;
 
   if (chatHistory.length === 0) {
       chatHistory.push({ role: "user", parts: [{ text: "ابدأ وتعرف على تعليماتك" }] });
-      chatHistory.push({ role: "model", parts: [{ text: "يا هلا فيك! أنا جاهز أستقبل طلبات الزباين وأرد عليهم." }] });
+      chatHistory.push({ role: "model", parts: [{ text: "يا هلا فيك! أنا جاهز لأستقبل طلبات الزباين وأرد عليهم بأسلوب لبناني راقٍ ومرتب." }] });
   }
 
   let userParts = [];
   if (userText) userParts.push({ text: userText });
   if (base64Audio) {
       let cleanMime = mimeType ? mimeType.split(';')[0] : "audio/webm";
-      userParts.push({
-          inlineData: {
-              mimeType: cleanMime,
-              data: base64Audio
-          }
-      });
+      userParts.push({ inlineData: { mimeType: cleanMime, data: base64Audio } });
   }
 
   chatHistory.push({ role: "user", parts: userParts });
@@ -456,14 +426,64 @@ async function callGeminiAPI(userText, base64Audio = null, mimeType = null) {
       const data = await response.json();
       if(data.error) {
           console.error(data.error);
-          return "عذراً يا غالي، يبدو إنو مفتاح الذكاء الاصطناعي مو صحيح أو خلصت الباقة تبعو 😅.";
+          return "عذراً يا غالي، يبدو أن مفتاح الذكاء الاصطناعي غير صحيح أو انتهت الباقة الخاصة به.";
       }
-      const botText = data.candidates[0].content.parts[0].text;
+      
+      let botText = data.candidates[0].content.parts[0].text;
+      
+      // ===== تدخل الجافاسكريبت لحساب المجموع بدقة مليون بالمية =====
+      const orderRegex = /\$\$ORDER:(.*?)\$\$/;
+      const match = botText.match(orderRegex);
+      
+      if(match) {
+         const itemsStr = match[1];
+         let total = 0;
+         let orderTextForWa = "";
+         let foundItems = [];
+         
+         itemsStr.split(',').forEach((pair) => {
+            let parts = pair.split('=');
+            if(parts.length === 2) {
+                let name = parts[0].trim();
+                let qty = parseInt(parts[1].trim()) || 1;
+                
+                let exactItem = menuItems.find(i => i.name === name);
+                if(!exactItem) {
+                    exactItem = menuItems.find(i => i.name.includes(name) || name.includes(i.name));
+                }
+                
+                if(exactItem) {
+                    total += exactItem.price * qty;
+                    foundItems.push(`${name} (x${qty})`);
+                    orderTextForWa += `- ${name} (x${qty})%0a`;
+                } else {
+                    foundItems.push(`${name} (x${qty})`);
+                    orderTextForWa += `- ${name} (x${qty})%0a`;
+                }
+            }
+         });
+         
+         const usdTotal = (total/RATE).toFixed(2);
+         orderTextForWa += `%0a*المجموع الدقيق: ${total.toLocaleString('en-US')} ل.ل (${usdTotal}$)*`;
+         
+         let waLink = `<br><br><div style="background:#fffaf5; border:1.5px dashed var(--red-light); padding:14px; border-radius:14px; margin-top:10px;">
+            <div style="font-weight:900; color:var(--brown); margin-bottom:8px; font-size:1.1em;">🧾 تفاصيل فاتورتك:</div>
+            <div style="font-size:0.95em; color:#555; margin-bottom:12px; line-height:1.6;">${foundItems.join('<br>')}</div>
+            <div style="font-weight:900; color:var(--red); font-size:1.2em; margin-bottom:12px; border-top:1px solid #ddd; padding-top:8px;">المجموع: ${total.toLocaleString('en-US')} ل.ل</div>
+            <a href="whatsapp://send?phone=96170359935&text=مرحبا%20ميدو،%20طلبي%20من%20المساعد%20الذكي:%0a%0a${orderTextForWa}" style="background:linear-gradient(135deg, #1ebe57, #25d366);color:white;padding:12px 15px;border-radius:50px;text-decoration:none;display:inline-flex;align-items:center;gap:8px;font-weight:bold;box-shadow:0 4px 10px rgba(37,211,102,0.3);width:100%;justify-content:center;font-size:1.05em;">
+              <i class="fab fa-whatsapp" style="font-size:1.3em;"></i> إرسال الطلب واعتماده
+            </a>
+         </div>`;
+         
+         botText = botText.replace(orderRegex, waLink);
+      }
+      // ==========================================================
+
       chatHistory.push({ role: "model", parts: [{ text: botText }] });
       return botText;
   } catch (e) {
       console.error(e);
-      return "عذراً يا غالي، صار في مشكلة بالاتصال! 😅 جرب مرة تانية، أو تواصل معنا عالواتساب مباشرة.";
+      return "عذراً يا غالي، حدثت مشكلة بالاتصال. جرب مرة أخرى من فضلك.";
   }
 }
 
@@ -477,7 +497,6 @@ async function toggleRecording() {
   const inputEl = document.getElementById("chatInput");
 
   if (isRecording) {
-    // إيقاف التسجيل وإرسال الملف
     mediaRecorder.stop();
     micBtn.classList.remove("recording");
     inputEl.placeholder = "جاري إرسال مقطع الصوت... 🚀";
@@ -496,7 +515,7 @@ async function toggleRecording() {
 
     mediaRecorder.onstop = async () => {
       const audioBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType });
-      const audioUrl = URL.createObjectURL(audioBlob); // إنشاء رابط قابل للتشغيل للصوت
+      const audioUrl = URL.createObjectURL(audioBlob); 
       
       const reader = new FileReader();
       reader.readAsDataURL(audioBlob);
@@ -506,7 +525,6 @@ async function toggleRecording() {
 
         const b = document.getElementById("chatBody");
         
-        // إضافة مشغل الصوت داخل المحادثة
         b.innerHTML += `
           <div class="user-msg" style="display:flex; flex-direction:column; gap:5px; align-items:flex-end; min-width: 220px;">
             <span style="font-size:0.85em; font-weight:bold;">🎤 رسالتك الصوتية:</span>
@@ -532,7 +550,6 @@ async function toggleRecording() {
         b.scrollTop = b.scrollHeight;
       };
       
-      // تحرير المايكروفون
       stream.getTracks().forEach(track => track.stop());
     };
 
@@ -542,7 +559,7 @@ async function toggleRecording() {
     inputEl.placeholder = "عم سجل... اكبس المايك مرة تانية لتبعت 🎤";
 
   } catch (err) {
-    alert("ما قدرنا نوصل للمايكروفون يا غالي، تأكد إنك عاطي الصلاحية للمتصفح.");
+    alert("ما قدرنا نوصل للمايكروفون يا غالي، تأكد إنك عاطي الصلاحية للمتصفح (وإنك فاتح الموقع بـ https).");
     console.error(err);
   }
 }
@@ -553,6 +570,22 @@ window.onclick = function(event) {
     if(event.target === m){ closeModal(id); }
   });
 };
+
+// تفعيل زر الرجوع للموبايل لجميع النوافذ
+window.addEventListener('popstate', function(event) {
+  ['customizeModal','cartModal','clearCartModal','emptyAlertModal','weightModal'].forEach(id => {
+    const m = document.getElementById(id);
+    if (m && m.classList.contains('active')) {
+      m.classList.remove('active');
+      m.style.display = 'none';
+    }
+  });
+  
+  const chatBox = document.getElementById("chatBox");
+  if (chatBox && chatBox.classList.contains('open')) {
+    chatBox.classList.remove('open');
+  }
+});
 
 window.addEventListener('scroll', ()=>{
   const scrollBtn = document.getElementById('scrollTop');
