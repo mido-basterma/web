@@ -273,21 +273,49 @@ function toggleCart() {
   }
 }
 
+// ===== SEND ORDER =====
 function sendOrder() {
   if(cart.length === 0){ openModal('emptyAlertModal'); return; }
-  let message = "مرحبا ميدو، طلبي هو:%0a%0a";
+  
+  let message = "مرحبا ميدو، طلبي من المساعد الذكي:%0a%0a";
   let total = 0;
   
-  cart.forEach((item, index) => {
+  // 1. تجميع الطلبات حسب الاسم
+  let groupedCart = {};
+  cart.forEach(item => {
     let itemQty = item.qty || 1;
-    let itemTotal = item.price * itemQty;
-    let qtyText = itemQty > 1 ? ` x${itemQty}` : '';
-    message += `${index+1}- ${item.name}${qtyText} ${item.notes}%0a`;
-    total += itemTotal;
+    total += item.price * itemQty;
+    
+    if (!groupedCart[item.name]) {
+      groupedCart[item.name] = { totalQty: 0, variants: [] };
+    }
+    groupedCart[item.name].totalQty += itemQty;
+    groupedCart[item.name].variants.push({ notes: item.notes, qty: itemQty });
   });
   
+  // 2. بناء رسالة الواتساب بالشكل المطلوب
+  for (const [name, data] of Object.entries(groupedCart)) {
+    message += `- ${name} (x${data.totalQty})%0a`;
+    
+    let normalQty = 0;
+    data.variants.forEach(v => {
+      if (!v.notes || v.notes.trim() === "") {
+        normalQty += v.qty;
+      } else {
+        // إزالة الأقواس واستبدال كلمة "بدون:" بـ "بلا" لتطابق المثال
+        let cleanNotes = v.notes.replace(/^\(\vert{}\)$/g, '').replace('بدون: ', 'بلا ');
+        message += `- ${v.qty} ${cleanNotes}%0a`;
+      }
+    });
+    
+    if (normalQty > 0) {
+      message += `- ${normalQty} عادي%0a`;
+    }
+    message += `--------------%0a%0a`;
+  }
+  
   const usdTotal = (total/RATE).toFixed(2);
-  message += `%0a*المجموع: ${total.toLocaleString()} ل.ل (${usdTotal}$)*`;
+  message += `*المجموع الدقيق: ${total.toLocaleString()} ل.ل (${usdTotal}$)*`;
   message += "%0a%0a📍 العنوان:";
   
   window.location.href = `whatsapp://send?phone=${storePhone}&text=${message}`;
@@ -375,34 +403,38 @@ async function callGeminiAPI(userText, base64Audio = null, mimeType = null) {
       return "عذراً يا غالي، المساعد الذكي متوقف حالياً. لازم الإدارة تضيف المفتاح من صفحة الأدمن أولاً.";
   }
   
-  let menuText = menuItems.map(i => `${i.name}`).join(' | ');
+  let menuText = menuItems.map(i => `${i.name} (السعر: ${i.price.toLocaleString('en-US')} ل.ل)`).join(' | ');
   
-  const systemPrompt = `أنت المساعد الشخصي لمطعم "ميدو ملك البسترما".
+  const systemPrompt = `أنت المساعد الشخصي الذكي لمطعم "ميدو ملك البسترما".
 معلومات المطعم:
 - فرع الشياح، طريق صيدا القديمة، مبنى سنتر دالاس بعد حلويات صدقة.
 - الفرع الأساسي في خلدة، وفرع الجية.
-- اللحم حلال 100%. نبيع بالكيلو وبالسندويشات. كل شيء بالكيلو يغلف بالفاكيوم للسفر.
+- اللحم حلال 100%. نبيع بالكيلو وبالسندويشات.
 - أصناف السندويشات: بسترما، روستو، سجق، مقانق، هوت دوغ، روستو مع جبنة. الخبز افرنجي فقط.
-- المكونات الثابتة للسندويشات: بندورة، كبيس مأتة، مايونيز، وخردل. يُضاف حامض للسجق والمقانق، وخس للروستو. الحر حسب الطلب.
-- لا يوجد شاورما أو بطاطا مقلية. لا علاقة لنا بمطاعم مانو وبيدو في برج حمود.
-- قائمة الأصناف المتوفرة لدينا: ${menuText}.
+- قائمة الأصناف المتوفرة لدينا وأسعارها الحقيقية: ${menuText}.
 
-تعليماتك الصارمة والأساسية:
-- اسمك "مساعد الـ Ai".
-- تحدث باللهجة اللبنانية المحكية البيضاء، بأسلوب لطيف، مرح، وخالٍ تماماً من أي أخطاء لغوية أو إملائية (استخدم عبارات مثل: تكرم عينك، يا هلا، شو بتأمر، من عيوني).
-- أجب باختصار ومباشرة. اسأل الزبون عن الكميات والإضافات بوضوح.
-- تنبيه برمجي حاسم: أنت لست آلة حاسبة! ممنوع نهائياً أن تحسب المجموع للزبون.
-- عندما يكتمل الطلب ويؤكده الزبون، قم بالرد برسالة ترحيبية قصيرة، ثم اكتب في نهاية رسالتك الكود السري التالي بالضبط (بدون أي مسافات زائدة) لكي يقوم النظام بحساب الفاتورة بدقة:
-$$ORDER:اسم الصنف=الكمية,اسم الصنف=الكمية$$
+تعليماتك الصارمة والأساسية (شخصيتك وأسلوبك):
+- اسمك "مساعد ميدو الذكي".
+- شخصيتك: فرفوش، كريم، مضياف، وبشوش جداً.
+- لهجتك: لبنانية أصيلة ومحكية 100%.
+- إذا سألك الزبون عن السعر، أعطه السعر المكتوب في القائمة ولا تخترع أي سعر من عندك.
+- تنبيه برمجي حاسم: أنت لست آلة حاسبة! ممنوع نهائياً أن تحسب المجموع النهائي للزبون. النظام سيتولى ذلك.
+    
+طريقة إنهاء الطلب وإصدار الكود السري (مهم جداً جداً):
+- عندما يؤكد الزبون الطلب بالكامل، اكتب في نهاية رسالتك الكود السري التالي بالضبط:
+$$ORDER:اسم الصنف=الكمية=ملاحظات,اسم الصنف=الكمية=ملاحظات$$
 
-مثال عملي:
-إذا طلب الزبون 2 سندويش روستو و 1 بيبسي، اكتب في آخر كلامك:
-$$ORDER:سندويش روستو=2,بيبسي=1$$
-ملاحظة: تأكد من كتابة أسماء الأصناف في الكود السري مطابقة تماماً للقائمة المذكورة أعلاه.`;
+قواعد كتابة الكود السري:
+1. يجب فصل كل صنف بعلامة فاصلة (,).
+2. يجب فصل الاسم والكمية والملاحظات بعلامة يساوى (=).
+3. إذا لم يطلب الزبون أي تعديل، اكتب في خانة الملاحظات كلمة "عادي".
+4. إذا طلب الزبون تعديل (مثلاً: 3 سجق، واحد منهم بلا بندورة واثنين عادي)، افصلها هكذا:
+$$ORDER:سندويش سجق=1=بلا بندورة,سندويش سجق=2=عادي$$
+ملاحظة: تأكد من كتابة أسماء الأصناف في الكود السري مطابقة تماماً للقائمة المذكورة.`;
 
   if (chatHistory.length === 0) {
       chatHistory.push({ role: "user", parts: [{ text: "ابدأ وتعرف على تعليماتك" }] });
-      chatHistory.push({ role: "model", parts: [{ text: "يا هلا فيك! أنا جاهز لأستقبل طلبات الزباين وأرد عليهم بأسلوب لبناني راقٍ ومرتب." }] });
+      chatHistory.push({ role: "model", parts: [{ text: "يا مية هلا وغلا فيك يا غالي! أنا مساعد ميدو، فرفوش وجاهز آخد طلبك لتاكل أطيب لقمة.. شو بتأمرني؟ 👑" }] });
   }
 
   let userParts = [];
@@ -431,44 +463,56 @@ $$ORDER:سندويش روستو=2,بيبسي=1$$
       
       let botText = data.candidates[0].content.parts[0].text;
       
-      // ===== تدخل الجافاسكريبت لحساب المجموع بدقة مليون بالمية =====
+      // ===== تدخل الجافاسكريبت لحساب وتجميع الطلب =====
       const orderRegex = /\$\$ORDER:(.*?)\$\$/;
       const match = botText.match(orderRegex);
       
       if(match) {
          const itemsStr = match[1];
          let total = 0;
-         let orderTextForWa = "";
-         let foundItems = [];
+         let groupedCart = {};
          
          itemsStr.split(',').forEach((pair) => {
             let parts = pair.split('=');
-            if(parts.length === 2) {
+            if(parts.length >= 2) {
                 let name = parts[0].trim();
                 let qty = parseInt(parts[1].trim()) || 1;
+                let notes = parts[2] ? parts[2].trim() : "عادي";
                 
-                let exactItem = menuItems.find(i => i.name === name);
-                if(!exactItem) {
-                    exactItem = menuItems.find(i => i.name.includes(name) || name.includes(i.name));
-                }
+                let exactItem = menuItems.find(i => i.name === name) || menuItems.find(i => i.name.includes(name) || name.includes(i.name));
                 
                 if(exactItem) {
                     total += exactItem.price * qty;
-                    foundItems.push(`${name} (x${qty})`);
-                    orderTextForWa += `- ${name} (x${qty})%0a`;
-                } else {
-                    foundItems.push(`${name} (x${qty})`);
-                    orderTextForWa += `- ${name} (x${qty})%0a`;
+                    // تجميع الأسماء
+                    if (!groupedCart[exactItem.name]) {
+                        groupedCart[exactItem.name] = { totalQty: 0, variants: [] };
+                    }
+                    groupedCart[exactItem.name].totalQty += qty;
+                    groupedCart[exactItem.name].variants.push({ notes: notes, qty: qty });
                 }
             }
          });
          
+         let orderTextForWa = "";
+         let invoiceHtml = "";
+         
+         for (const [name, data] of Object.entries(groupedCart)) {
+            orderTextForWa += `- ${name} (x${data.totalQty})%0a`;
+            invoiceHtml += `<strong>${name} (x${data.totalQty})</strong><br>`;
+            
+            data.variants.forEach(v => {
+               orderTextForWa += `-${v.qty} ${v.notes}%0a`;
+               invoiceHtml += `<span style="color:#777; font-size:0.9em;">- ${v.qty} ${v.notes}</span><br>`;
+            });
+            orderTextForWa += `--------------%0a%0a`;
+         }
+         
          const usdTotal = (total/RATE).toFixed(2);
-         orderTextForWa += `%0a*المجموع الدقيق: ${total.toLocaleString('en-US')} ل.ل (${usdTotal}$)*`;
+         orderTextForWa += `*المجموع الدقيق: ${total.toLocaleString('en-US')} ل.ل (${usdTotal}$)*`;
          
          let waLink = `<br><br><div style="background:#fffaf5; border:1.5px dashed var(--red-light); padding:14px; border-radius:14px; margin-top:10px;">
             <div style="font-weight:900; color:var(--brown); margin-bottom:8px; font-size:1.1em;">🧾 تفاصيل فاتورتك:</div>
-            <div style="font-size:0.95em; color:#555; margin-bottom:12px; line-height:1.6;">${foundItems.join('<br>')}</div>
+            <div style="font-size:0.95em; color:#555; margin-bottom:12px; line-height:1.6;">${invoiceHtml}</div>
             <div style="font-weight:900; color:var(--red); font-size:1.2em; margin-bottom:12px; border-top:1px solid #ddd; padding-top:8px;">المجموع: ${total.toLocaleString('en-US')} ل.ل</div>
             <a href="whatsapp://send?phone=96170359935&text=مرحبا%20ميدو،%20طلبي%20من%20المساعد%20الذكي:%0a%0a${orderTextForWa}" style="background:linear-gradient(135deg, #1ebe57, #25d366);color:white;padding:12px 15px;border-radius:50px;text-decoration:none;display:inline-flex;align-items:center;gap:8px;font-weight:bold;box-shadow:0 4px 10px rgba(37,211,102,0.3);width:100%;justify-content:center;font-size:1.05em;">
               <i class="fab fa-whatsapp" style="font-size:1.3em;"></i> إرسال الطلب واعتماده
@@ -477,7 +521,6 @@ $$ORDER:سندويش روستو=2,بيبسي=1$$
          
          botText = botText.replace(orderRegex, waLink);
       }
-      // ==========================================================
 
       chatHistory.push({ role: "model", parts: [{ text: botText }] });
       return botText;
