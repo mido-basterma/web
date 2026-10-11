@@ -14,20 +14,20 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-let RATE = 89000; // غيرناها من const لـ let لنقدر نعدلها
+let RATE = 89000;
 let menuItems = [];
 let cart = [];
 let currentItemToCustomize = null;
 let currentKiloItem = null;
 let storePhone = "96170359935"; 
-let geminiApiKey = ""; // حفظ مفتاح الذكاء الاصطناعي
+let geminiApiKey = ""; // سيتم جلبه من الإعدادات بأدمن الموقع
 
 // جلب الإعدادات (أرقام التواصل وسعر الصرف ومفتاح الذكاء الاصطناعي)
 onValue(ref(db, 'settings/contact'), (snapshot) => {
     const contact = snapshot.val();
     if (contact) {
         storePhone = contact.whatsapp || "96170359935"; 
-        geminiApiKey = contact.geminiApiKey || ""; // جلب المفتاح
+        geminiApiKey = contact.geminiApiKey || ""; 
         const waBtn = document.getElementById('waLinkBtn');
         const phBtn = document.getElementById('phoneLinkBtn');
         if(waBtn) waBtn.href = `whatsapp://send?phone=${storePhone}`;
@@ -35,7 +35,6 @@ onValue(ref(db, 'settings/contact'), (snapshot) => {
         
         if (contact.rate && contact.rate !== RATE) {
             RATE = contact.rate;
-            // إعادة عرض المنيو والسلة لتحديث الأسعار بالدولار فوراً
             if (menuItems.length > 0) renderMenu();
             if (cart.length > 0) updateCartUI();
         }
@@ -50,7 +49,6 @@ onValue(ref(db, 'menuItems'), (snapshot) => {
             id: key,
             ...data[key]
         }));
-        // ترتيب العناصر بناءً على الحقل order اللي تعدل بالأدمن
         menuItems.sort((a, b) => (a.order || 0) - (b.order || 0));
         renderMenu();
     } else {
@@ -88,7 +86,6 @@ function renderMenu() {
 
   if(kiloContainer) kiloContainer.innerHTML = menuItems.filter(i=>i.type==='kilo').map(item=>{
     const usd = (item.price/RATE).toFixed(2);
-    // هون ضفنا شرط: إذا في صورة اعرضها، وإذا لأ اعرض الإيموجي
     const visual = item.img ? `<img src="${item.img}" style="width: 80px; height: 80px; object-fit: contain;">` : `<div class="kilo-icon">${item.icon||'⚖️'}</div>`;
     
     return `
@@ -348,26 +345,137 @@ function updateVisitorCounter() {
   if(counterDiv) counterDiv.innerHTML = `👑 عدد الزوار: <span>${final.toLocaleString('en-US')}</span>`;
 }
 
-// ===== CHAT =====
+// ===== CHATBOT & VOICE AI =====
+let chatHistory = [];
+
 function toggleChat() {
   const box = document.getElementById("chatBox");
   box.classList.toggle('open');
 }
-function askBot(t) {
+
+function sendPredefined(text) {
+  document.getElementById("chatInput").value = text;
+  sendUserMsg();
+}
+
+async function sendUserMsg() {
+  const inputEl = document.getElementById("chatInput");
+  const text = inputEl.value.trim();
+  if (!text) return;
+  
   const b = document.getElementById("chatBody");
-  const map = {
-    branches: ["كم فرع عندكم؟ 🏪", "نحنا فرع الشياح - طريق صيدا القديمة.<br>ويوجد لدينا فروع بخلدة والجيّة. 🏪"],
-    meat:     ["اللحمة حلال؟ 🥩", "اطمّن يا غالي! 🕌 اللحمة عنا حلال 100% مذبوحة عالطريقة الشرعية، طازجة ونظيفة."],
-    menu:     ["شو في أكل؟ 🍔", "القائمة كلها فوق 👆 عنا بسترما، روستو، سجق، مقانق، وهوت دوغ مع مشروبات باردة."],
-    party:    ["عندي عزيمة 🎉", "أهلاً وسهلاً! 🎊 منبيضلك وجهك بالطلبيات الكبيرة. حكينا واتساب لنرتبلك ياها بسهولة."],
-    location: ["وين الموقع؟ 📍", "نحن بالشياح - طريق صيدا القديمة. 📍 ناطرينك يا غالي!"],
-    hours:    ["ايمت بتفتحوا؟ ⏰", "يومياً من 10 الصبح للـ 11:30 بالليل. ⏰"],
-    delivery: ["في دليفري؟ 🛵", "طبعاً! 🛵 لكل بيروت وضواحيها. اطلب من السلة ورح يوصلك الطلب واتساب فوراً."]
-  };
-  const [u, r] = map[t] || ['سؤال', 'ما عندي جواب 😅'];
-  b.innerHTML += `<div class="user-msg">${u}</div>`;
+  b.innerHTML += `<div class="user-msg">${text}</div>`;
+  inputEl.value = "";
   b.scrollTop = b.scrollHeight;
-  setTimeout(()=>{ b.innerHTML += `<div class="bot-msg">${r}</div>`; b.scrollTop=b.scrollHeight; }, 600);
+  
+  const options = document.getElementById("chatOptions");
+  if(options) options.style.display = "none";
+  
+  const typingId = "typing_" + Date.now();
+  b.innerHTML += `<div class="bot-msg" id="${typingId}">المساعد عم يفكر... 🤖</div>`;
+  b.scrollTop = b.scrollHeight;
+  
+  const botReply = await callGeminiAPI(text);
+  
+  document.getElementById(typingId).remove();
+  let formattedReply = botReply.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  formattedReply = formattedReply.replace(/\n/g, '<br>');
+  b.innerHTML += `<div class="bot-msg">${formattedReply}</div>`;
+  b.scrollTop = b.scrollHeight;
+}
+
+async function callGeminiAPI(userText) {
+  if (!geminiApiKey) {
+      return "عذراً يا غالي، المساعد الذكي متوقف حالياً. لازم الإدارة تضيف المفتاح من صفحة الأدمن أولاً.";
+  }
+  
+  let menuText = menuItems.map(i => `${i.name} (${i.price.toLocaleString('en-US')} ل.ل)`).join('، ');
+  
+  const systemPrompt = `أنت المساعد الشخصي لمطعم "ميدو ملك البسترما".
+معلومات المطعم:
+- فرع الشياح طريق صيدا القديمة، مبنى سنتر دالاس بعد حلويات صدقة (منذ 2009).
+- الفرع الأساسي في خلدة (منذ 1990)، وفرع الجية (منذ 2024).
+- اللحم حلال 100%. نبيع بالكيلو وبسندويشات. كل شيء بالكيلو يغلف بالفاكيوم للسفر.
+- أصناف السندويشات: بسترما، روستو، سجق، مقانق، هوت دوغ، روستو مع جبنة.
+- أصناف الكيلو: بسترما، روستو، سجق، مقانق. الخبز افرنجي فقط.
+- مكونات السندويشات: بندورة، كبيس مأتة، مايونيز، وخردل. يُضاف حامض للسجق والمقانق، وخس للروستو. الحر عالطلب.
+- لا يوجد شاورما أو بطاطا. لا علاقة لنا بمطاعم مانو وبيدو.
+- سعر الصرف المعتمد حالياً: ${RATE} ليرة.
+- قائمة الأسعار الحالية المتوفرة لدينا: ${menuText}.
+
+تعليماتك الصارمة:
+- اسمك "مساعد الـ Ai".
+- تحدث بلهجة لبنانية بحتة، مرحة ومحببة (استخدم: تكرم عينك، يا هلا، شو بتأمر، من عيوني).
+- أجب باختصار ومباشرة جداً. لا تثرثر.
+- إذا أراد الزبون تقديم طلب، اسأله عن التفاصيل بوضوح (الكمية أو الإضافات)، ولما يتأكد، ولّد هذا الرابط ليقوم بإرسال الطلب لنا:
+<a href="whatsapp://send?phone=96170359935&text=مرحبا%20ميدو،%20طلبي%20من%20المساعد%20الذكي%20هو:%0A[اكتب هنا تفاصيل الطلب والمجموع]" style="background:#25d366;color:white;padding:10px;border-radius:10px;text-decoration:none;display:inline-block;margin-top:10px;font-weight:bold;text-align:center;">📲 إرسال الطلب عبر واتساب</a>`;
+
+  if (chatHistory.length === 0) {
+      chatHistory.push({ role: "user", parts: [{ text: "ابدأ وتعرف على تعليماتك" }] });
+      chatHistory.push({ role: "model", parts: [{ text: "يا هلا فيك! أنا جاهز أستقبل طلبات الزباين وأرد عليهم." }] });
+  }
+
+  chatHistory.push({ role: "user", parts: [{ text: userText }] });
+
+  try {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent?key=${geminiApiKey}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+              systemInstruction: { parts: [{ text: systemPrompt }] },
+              contents: chatHistory
+          })
+      });
+      const data = await response.json();
+      if(data.error) {
+          console.error(data.error);
+          return "عذراً يا غالي، يبدو إنو مفتاح الذكاء الاصطناعي مو صحيح أو خلصت الباقة تبعو 😅.";
+      }
+      const botText = data.candidates[0].content.parts[0].text;
+      chatHistory.push({ role: "model", parts: [{ text: botText }] });
+      return botText;
+  } catch (e) {
+      console.error(e);
+      return "عذراً يا غالي، صار في مشكلة بالاتصال! 😅 جرب مرة تانية، أو تواصل معنا عالواتساب مباشرة.";
+  }
+}
+
+// ===== VOICE RECOGNITION =====
+function startVoiceRecognition() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    alert("متصفحك ما بيدعم ميزة الصوت يا غالي، جرب من جوجل كروم.");
+    return;
+  }
+  const recognition = new SpeechRecognition();
+  recognition.lang = 'ar-LB'; // اللهجة اللبنانية
+  recognition.interimResults = false;
+  
+  const micBtn = document.getElementById("micBtn");
+  const inputEl = document.getElementById("chatInput");
+  
+  recognition.onstart = function() {
+    if(micBtn) micBtn.classList.add("recording");
+    if(inputEl) inputEl.placeholder = "عم اسمعك، احكي...";
+  };
+  
+  recognition.onspeechend = function() {
+    recognition.stop();
+  };
+  
+  recognition.onresult = function(event) {
+    const transcript = event.results[0][0].transcript;
+    if(inputEl) inputEl.value = transcript;
+    if(micBtn) micBtn.classList.remove("recording");
+    if(inputEl) inputEl.placeholder = "اكتب سؤالك أو احكي...";
+  };
+  
+  recognition.onerror = function(event) {
+    if(micBtn) micBtn.classList.remove("recording");
+    if(inputEl) inputEl.placeholder = "اكتب سؤالك أو احكي...";
+  };
+  
+  recognition.start();
 }
 
 window.onclick = function(event) {
@@ -408,4 +516,6 @@ window.toggleCart = toggleCart;
 window.closeCustomizeModal = closeCustomizeModal;
 window.sendOrder = sendOrder;
 window.toggleChat = toggleChat;
-window.askBot = askBot;
+window.sendPredefined = sendPredefined;
+window.sendUserMsg = sendUserMsg;
+window.startVoiceRecognition = startVoiceRecognition;

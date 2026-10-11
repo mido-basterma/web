@@ -199,11 +199,11 @@
 </div>
 <div class="chat-box" id="chatBox">
   <div class="chat-header">
-    🤖 مساعد ميدو
+    🤖 مساعد الـ Ai
     <span class="chat-close" onclick="toggleChat()">×</span>
   </div>
   <div class="chat-body" id="chatBody">
-    <div class="bot-msg">أهلاً يا غالي! 👑<br>أنا جاهز ساعدك، نقّي سؤال 👇</div>
+    <div class="bot-msg">يا مية أهلاً وسهلاً فيك يا غالي! 👑<br>تكرم عينك، أنا مساعدك الذكي، اسألني شو ما بدك أو ابعتلي أوردرك وأنا بجهزه 👇</div>
   </div>
   <div class="chat-options" id="chatOptions">
     <button onclick="sendPredefined('أين فروعكم؟')">🏪 الفروع</button>
@@ -212,9 +212,13 @@
     <button onclick="sendPredefined('أريد تفاصيل الدليفري')">🛵 دليفري</button>
   </div>
   <div class="chat-input-area">
-    <button class="chat-mic-btn" id="micBtn" onclick="startVoiceRecognition()"><i class="fa-solid fa-microphone"></i></button>
+    <button class="chat-mic-btn" id="micBtn" onclick="startVoiceRecognition()">
+      <i class="fa-solid fa-microphone"></i>
+    </button>
     <input type="text" id="chatInput" placeholder="اكتب سؤالك أو احكي..." onkeypress="if(event.key === 'Enter') sendUserMsg()">
-    <button class="chat-send-btn" onclick="sendUserMsg()"><i class="fa-solid fa-paper-plane"></i></button>
+    <button class="chat-send-btn" onclick="sendUserMsg()">
+      <i class="fa-solid fa-paper-plane"></i>
+    </button>
   </div>
 </div>
 <script type="module" src="script.js"></script>
