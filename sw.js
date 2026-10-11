@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mido-admin-v68';
+const CACHE_NAME = 'mido-admin-v69';
 const ASSETS = [
   './admin.html',
   './manifest.json',
