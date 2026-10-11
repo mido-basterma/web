@@ -202,54 +202,54 @@
         <!-- تم إضافة id للصورة ليتم كسر الكاش برمجياً -->
         <img id="menuBgImg" src="menu_bg.png" style="position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; z-index: -1; object-fit: cover;" crossorigin="anonymous">
         <style>
-            /* التعديل لضمان الفواصل بمكانها الصحيح، ومحاذاة السعر بجانب النقطة الحمراء تماماً */
+            /* إعدادات الخط والألوان الأساسية */
             .export-price { 
                 position: absolute; 
-                color: #cc1e1e; /* لون أحمر مطابق للصورة */
+                color: #cc1e1e; 
                 font-weight: 900; 
-                font-size: 62px; /* تكبير الخط ليتطابق مع الصورة */
                 letter-spacing: 1px; 
                 text-shadow: 1px 1px 3px rgba(0,0,0,0.2);
-                direction: ltr; /* مهم جداً لتظهر الفاصلة بالإنجليزية 400,000 */
-                text-align: right; /* لمحاذاة الرقم من جهة اليمين ليثبت بجانب النقطة الحمراء */
-                width: 400px; /* مساحة ليتمدد فيها الرقم براحته لليسار */
+                direction: ltr; /* الفاصلة بشكل صحيح 400,000 */
             }
             
-            /* الكيلو (على اليسار) - نستخدم right لتثبيت الرقم بالنسبة لليمين */
-            #p_kilo_basterma { top: 260px; right: 1475px; }
-            #p_kilo_rosto { top: 435px; right: 1475px; }
-            #p_kilo_soujouk { top: 610px; right: 1475px; }
-            #p_kilo_makanek { top: 790px; right: 1475px; }
+            /* السندويشات (اليمين) - محاذاة لليسار لتبدأ من عند النقطة الحمراء وتتمدد لليمين */
+            .sand-price { font-size: 55px; width: 300px; text-align: left; left: 1380px; }
+            #p_sand_basterma { top: 230px; }
+            #p_sand_rosto { top: 350px; }
+            #p_sand_soujouk { top: 470px; }
+            #p_sand_makanek { top: 590px; }
+            #p_sand_hotdog { top: 710px; }
+            #p_sand_rosto_cheese { top: 850px; }
             
-            /* المشروبات (في الوسط) */
-            #p_drink_pepsi { top: 485px; right: 865px; font-size: 55px;}
-            #p_drink_ayran { top: 585px; right: 865px; font-size: 55px;}
-            #p_drink_water { top: 685px; right: 865px; font-size: 55px;}
+            /* المشروبات (الوسط) */
+            .drink-price { font-size: 45px; width: 250px; text-align: left; left: 770px; }
+            #p_drink_pepsi { top: 485px; }
+            #p_drink_ayran { top: 585px; }
+            #p_drink_water { top: 685px; }
             
-            /* السندويشات (على اليمين) */
-            #p_sand_basterma { top: 220px; right: 235px; }
-            #p_sand_rosto { top: 345px; right: 235px; }
-            #p_sand_soujouk { top: 465px; right: 235px; }
-            #p_sand_makanek { top: 585px; right: 235px; }
-            #p_sand_hotdog { top: 705px; right: 235px; }
-            #p_sand_rosto_cheese { top: 845px; right: 235px; }
+            /* الكيلو (اليسار) */
+            .kilo-price { font-size: 55px; width: 300px; text-align: left; left: 200px; }
+            #p_kilo_basterma { top: 270px; }
+            #p_kilo_rosto { top: 445px; }
+            #p_kilo_soujouk { top: 620px; }
+            #p_kilo_makanek { top: 800px; }
         </style>
         <!-- السندويشات -->
-        <div class="export-price" id="p_sand_basterma">0</div>
-        <div class="export-price" id="p_sand_rosto">0</div>
-        <div class="export-price" id="p_sand_soujouk">0</div>
-        <div class="export-price" id="p_sand_makanek">0</div>
-        <div class="export-price" id="p_sand_hotdog">0</div>
-        <div class="export-price" id="p_sand_rosto_cheese">0</div>
+        <div class="export-price sand-price" id="p_sand_basterma">0</div>
+        <div class="export-price sand-price" id="p_sand_rosto">0</div>
+        <div class="export-price sand-price" id="p_sand_soujouk">0</div>
+        <div class="export-price sand-price" id="p_sand_makanek">0</div>
+        <div class="export-price sand-price" id="p_sand_hotdog">0</div>
+        <div class="export-price sand-price" id="p_sand_rosto_cheese">0</div>
         <!-- الكيلو -->
-        <div class="export-price" id="p_kilo_basterma">0</div>
-        <div class="export-price" id="p_kilo_rosto">0</div>
-        <div class="export-price" id="p_kilo_soujouk">0</div>
-        <div class="export-price" id="p_kilo_makanek">0</div>
+        <div class="export-price kilo-price" id="p_kilo_basterma">0</div>
+        <div class="export-price kilo-price" id="p_kilo_rosto">0</div>
+        <div class="export-price kilo-price" id="p_kilo_soujouk">0</div>
+        <div class="export-price kilo-price" id="p_kilo_makanek">0</div>
         <!-- المشروبات -->
-        <div class="export-price" id="p_drink_pepsi">0</div>
-        <div class="export-price" id="p_drink_ayran">0</div>
-        <div class="export-price" id="p_drink_water">0</div>
+        <div class="export-price drink-price" id="p_drink_pepsi">0</div>
+        <div class="export-price drink-price" id="p_drink_ayran">0</div>
+        <div class="export-price drink-price" id="p_drink_water">0</div>
     </div>
 
     <div id="toast">تم بنجاح</div>
