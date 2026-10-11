@@ -185,6 +185,10 @@
             <label class="form-label">الرقم الأرضي</label>
             <input type="text" id="phoneNum" class="input-field" placeholder="01382472">
         </div>
+        <div class="form-group">
+            <label class="form-label">مفتاح الذكاء الاصطناعي (Gemini API)</label>
+            <input type="password" id="geminiApiKey" class="input-field" placeholder="AIzaSy...">
+        </div>
         <button class="btn" onclick="saveSettings()">حفظ الإعدادات</button>
     </div>
 
@@ -287,6 +291,7 @@
                 document.getElementById('whatsappNum').value = contact.whatsapp || '96170359935';
                 document.getElementById('phoneNum').value = contact.phone || '01382472';
                 document.getElementById('exchangeRate').value = contact.rate || 89000;
+                document.getElementById('geminiApiKey').value = contact.geminiApiKey || '';
             });
         }
 
@@ -459,7 +464,8 @@
             const data = {
                 whatsapp: document.getElementById('whatsappNum').value,
                 phone: document.getElementById('phoneNum').value,
-                rate: Number(document.getElementById('exchangeRate').value) || 89000
+                rate: Number(document.getElementById('exchangeRate').value) || 89000,
+                geminiApiKey: document.getElementById('geminiApiKey').value
             };
             update(ref(db, 'settings/contact'), data).then(() => {
                 history.back(); showToast('تم حفظ الإعدادات ⚙️');

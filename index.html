@@ -205,14 +205,15 @@
   <div class="chat-body" id="chatBody">
     <div class="bot-msg">أهلاً يا غالي! 👑<br>أنا جاهز ساعدك، نقّي سؤال 👇</div>
   </div>
-  <div class="chat-options">
-    <button onclick="askBot('branches')">🏪 الفروع</button>
-    <button onclick="askBot('meat')">🥩 اللحمة حلال؟</button>
-    <button onclick="askBot('menu')">🍔 المنيو</button>
-    <button onclick="askBot('party')">🎉 طلبية كبيرة</button>
-    <button onclick="askBot('location')">📍 الموقع</button>
-    <button onclick="askBot('hours')">⏰ الدوام</button>
-    <button onclick="askBot('delivery')">🛵 دليفري</button>
+  <div class="chat-options" id="chatOptions">
+    <button onclick="sendPredefined('أين فروعكم؟')">🏪 الفروع</button>
+    <button onclick="sendPredefined('هل اللحمة حلال؟')">🥩 اللحمة حلال؟</button>
+    <button onclick="sendPredefined('ما هو المنيو؟')">🍔 المنيو</button>
+    <button onclick="sendPredefined('أريد تفاصيل الدليفري')">🛵 دليفري</button>
+  </div>
+  <div class="chat-input-area">
+    <input type="text" id="chatInput" placeholder="اكتب سؤالك أو طلبك هون..." onkeypress="if(event.key === 'Enter') sendUserMsg()">
+    <button class="chat-send-btn" onclick="sendUserMsg()"><i class="fa-solid fa-paper-plane"></i></button>
   </div>
 </div>
 <script type="module" src="script.js"></script>

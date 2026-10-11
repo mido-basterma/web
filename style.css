@@ -715,6 +715,25 @@ header h1 {
   border-color: transparent;
 }
 
+.chat-input-area {
+  display: flex; gap: 8px; padding: 12px; background: #fff;
+  border-top: 1px solid var(--cream-dark);
+}
+.chat-input-area input {
+  flex: 1; padding: 10px 14px; border: 1.5px solid var(--cream-dark);
+  border-radius: 50px; font-family: 'Cairo', sans-serif;
+  outline: none; transition: 0.3s;
+}
+.chat-input-area input:focus { border-color: var(--red); }
+.chat-send-btn {
+  background: linear-gradient(135deg, var(--red), var(--red-light));
+  color: white; border: none; width: 42px; height: 42px;
+  border-radius: 50%; cursor: pointer; display: flex;
+  align-items: center; justify-content: center;
+  transition: 0.2s; box-shadow: 0 4px 10px rgba(192,57,43,0.2);
+}
+.chat-send-btn:hover { transform: scale(1.05); }
+
 /* ===== EMPTY CART PLACEHOLDER ===== */
 .empty-cart {
   text-align: center; padding: 30px 20px;
