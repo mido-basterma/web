@@ -143,6 +143,36 @@
         </button>
     </div>
 
+    <!-- تمت إعادة نافذة إضافة وتعديل المنتجات التي حُذفت بالخطأ -->
+    <div class="modal" id="itemModal">
+        <div class="modal-header">
+            <h2 id="modalTitle">إضافة منتج</h2>
+            <button class="icon-btn" onclick="closeAllViews()"><i class="fas fa-times"></i></button>
+        </div>
+        <input type="hidden" id="itemId">
+        <div class="form-group">
+            <label class="form-label">الاسم</label>
+            <input type="text" id="itemName" class="input-field" placeholder="مثال: سندويش روستو">
+        </div>
+        <div class="form-group">
+            <label class="form-label">السعر (ل.ل)</label>
+            <input type="number" id="itemPrice" class="input-field" placeholder="0">
+        </div>
+        <div class="form-group">
+            <label class="form-label">النوع</label>
+            <select id="itemType" class="input-field">
+                <option value="sandwich">سندويش</option>
+                <option value="kilo">لحمة (بالكيلو)</option>
+                <option value="drink">مشروب</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label class="form-label">رابط الصورة أو الإيموجي (🥩/🥤)</label>
+            <input type="text" id="itemImg" class="input-field" placeholder="رابط صورة أو حط إيموجي">
+        </div>
+        <button class="btn" onclick="saveItem()">حفظ التغييرات</button>
+    </div>
+
     <div class="modal" id="phoneModal">
         <div class="modal-header">
             <h2>الإعدادات العامة</h2>
@@ -168,7 +198,9 @@
     </div>
 
     <!-- Template for Menu Image Export -->
-    <div id="export-container" style="position: absolute; left: -9999px; top: -9999px; width: 1920px; height: 1080px; background: url('menu_bg.png') no-repeat center/cover; font-family: 'Cairo', sans-serif; direction: rtl;">
+    <div id="export-container" style="position: absolute; left: -9999px; top: -9999px; width: 1920px; height: 1080px; font-family: 'Cairo', sans-serif; direction: rtl; overflow: hidden; background-color: #fff;">
+        <!-- تم إضافة id للصورة ليتم كسر الكاش برمجياً -->
+        <img id="menuBgImg" src="menu_bg.png" style="position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; z-index: -1; object-fit: cover;" crossorigin="anonymous">
         <style>
             /* التعديل لضمان الفواصل بمكانها الصحيح، ومحاذاة السعر بجانب النقطة الحمراء تماماً */
             .export-price { 
@@ -521,13 +553,11 @@
             closeAllViews();
             showToast('جاري تحضير الصورة، ثواني يا غالي... ⏳');
             
-            // دالة لجلب السعر من الداتا، وإذا لم يجده يضع السعر الافتراضي
             const getPrice = (type, keyword, defaultPrice = 0) => {
                 let item = menuData.find(i => i.type === type && i.name.includes(keyword));
                 return item ? item.price.toLocaleString('en-US') : defaultPrice.toLocaleString('en-US');
             };
 
-            // وضع الأسعار في القالب (السندويشات)
             document.getElementById('p_sand_basterma').innerText = getPrice('sandwich', 'بسترما');
             document.getElementById('p_sand_rosto').innerText = getPrice('sandwich', 'روستو');
             document.getElementById('p_sand_soujouk').innerText = getPrice('sandwich', 'سجق');
@@ -535,39 +565,48 @@
             document.getElementById('p_sand_hotdog').innerText = getPrice('sandwich', 'هوت دوغ');
             document.getElementById('p_sand_rosto_cheese').innerText = getPrice('sandwich', 'جبنة', 550000);
 
-            // الكيلو
             document.getElementById('p_kilo_basterma').innerText = getPrice('kilo', 'بسترما');
             document.getElementById('p_kilo_rosto').innerText = getPrice('kilo', 'روستو');
             document.getElementById('p_kilo_soujouk').innerText = getPrice('kilo', 'سجق');
             document.getElementById('p_kilo_makanek').innerText = getPrice('kilo', 'مقانق');
 
-            // المشروبات
             document.getElementById('p_drink_pepsi').innerText = getPrice('drink', 'بيبسي', 100000);
             document.getElementById('p_drink_ayran').innerText = getPrice('drink', 'عيران', 80000);
             document.getElementById('p_drink_water').innerText = getPrice('drink', 'ماء', 30000);
 
             const container = document.getElementById('export-container');
+            const bgImg = document.getElementById('menuBgImg');
+
+            // إجبار المتصفح على قراءة الخلفية من السيرفر وليس من الكاش
+            if (!bgImg.src.includes('?v=')) {
+                bgImg.src = 'menu_bg.png?v=' + new Date().getTime();
+            }
+
             container.style.left = '0';
             container.style.top = '0';
-            container.style.zIndex = '-100'; // خلف الشاشة لعدم إزعاج المستخدم
+            container.style.zIndex = '-100'; 
 
-            // التقاط الصورة وتنزيلها بدقة عالية جداً
+            // انتظار ثانية ونصف لضمان تحميل الخلفية، مع إجبار العرض والارتفاع
             setTimeout(() => {
-                // scale: 3 تعني جودة عالية جداً (4K تقريباً)
-                html2canvas(container, { scale: 3, useCORS: true, backgroundColor: null }).then(canvas => {
-                    container.style.left = '-9999px'; // إرجاع الإخفاء
+                html2canvas(container, { 
+                    scale: 2, 
+                    useCORS: true, 
+                    width: 1920, 
+                    height: 1080 
+                }).then(canvas => {
+                    container.style.left = '-9999px'; 
                     
                     const link = document.createElement('a');
-                    link.download = `Mido_Menu_HighRes_${new Date().toISOString().slice(0,10)}.png`;
+                    link.download = `Mido_Menu_${new Date().toISOString().slice(0,10)}.png`;
                     link.href = canvas.toDataURL('image/png', 1.0);
                     link.click();
                     
-                    showToast('تم تحميل الصورة بدقة عالية بنجاح! 🎉');
+                    showToast('تم تحميل الصورة بنجاح! 🎉');
                 }).catch(err => {
                     container.style.left = '-9999px';
                     alert("حدث خطأ أثناء التصوير: تأكد من رفع صورة menu_bg.png بشكل صحيح.");
                 });
-            }, 500); // انتظار نصف ثانية لتأكيد ظهور الأرقام
+            }, 1500); 
         };
     </script>
 </body>
