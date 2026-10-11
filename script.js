@@ -349,104 +349,25 @@ function updateVisitorCounter() {
 }
 
 // ===== CHAT =====
-let chatHistory = [];
-
 function toggleChat() {
   const box = document.getElementById("chatBox");
   box.classList.toggle('open');
 }
-
-function sendPredefined(text) {
-  document.getElementById("chatInput").value = text;
-  sendUserMsg();
-}
-
-async function sendUserMsg() {
-  const inputEl = document.getElementById("chatInput");
-  const text = inputEl.value.trim();
-  if (!text) return;
-  
+function askBot(t) {
   const b = document.getElementById("chatBody");
-  b.innerHTML += `<div class="user-msg">${text}</div>`;
-  inputEl.value = "";
+  const map = {
+    branches: ["كم فرع عندكم؟ 🏪", "نحنا فرع الشياح - طريق صيدا القديمة.<br>ويوجد لدينا فروع بخلدة والجيّة. 🏪"],
+    meat:     ["اللحمة حلال؟ 🥩", "اطمّن يا غالي! 🕌 اللحمة عنا حلال 100% مذبوحة عالطريقة الشرعية، طازجة ونظيفة."],
+    menu:     ["شو في أكل؟ 🍔", "القائمة كلها فوق 👆 عنا بسترما، روستو، سجق، مقانق، وهوت دوغ مع مشروبات باردة."],
+    party:    ["عندي عزيمة 🎉", "أهلاً وسهلاً! 🎊 منبيضلك وجهك بالطلبيات الكبيرة. حكينا واتساب لنرتبلك ياها بسهولة."],
+    location: ["وين الموقع؟ 📍", "نحن بالشياح - طريق صيدا القديمة. 📍 ناطرينك يا غالي!"],
+    hours:    ["ايمت بتفتحوا؟ ⏰", "يومياً من 10 الصبح للـ 11:30 بالليل. ⏰"],
+    delivery: ["في دليفري؟ 🛵", "طبعاً! 🛵 لكل بيروت وضواحيها. اطلب من السلة ورح يوصلك الطلب واتساب فوراً."]
+  };
+  const [u, r] = map[t] || ['سؤال', 'ما عندي جواب 😅'];
+  b.innerHTML += `<div class="user-msg">${u}</div>`;
   b.scrollTop = b.scrollHeight;
-  
-  // إخفاء الأزرار الجاهزة بعد أول رسالة
-  const options = document.getElementById("chatOptions");
-  if(options) options.style.display = "none";
-  
-  const typingId = "typing_" + Date.now();
-  b.innerHTML += `<div class="bot-msg" id="${typingId}">المساعد عم يكتب... ✍️</div>`;
-  b.scrollTop = b.scrollHeight;
-  
-  const botReply = await callGeminiAPI(text);
-  
-  document.getElementById(typingId).remove();
-  let formattedReply = botReply.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-  formattedReply = formattedReply.replace(/\n/g, '<br>');
-  b.innerHTML += `<div class="bot-msg">${formattedReply}</div>`;
-  b.scrollTop = b.scrollHeight;
-}
-
-async function callGeminiAPI(userText) {
-  if (!geminiApiKey) {
-      return "عذراً يا غالي، المساعد الذكي متوقف حالياً. الإدارة لازم تضيف المفتاح من لوحة التحكم.";
-  }
-  
-  // جلب الأسعار الحية من المنيو الموجود
-  let menuText = menuItems.map(i => `${i.name} (${i.price.toLocaleString('en-US')} ل.ل)`).join('، ');
-  
-  const systemPrompt = `أنت المساعد الشخصي لمطعم "ميدو ملك البسترما".
-معلومات المطعم الأساسية التي يجب أن تعتمد عليها:
-- فرع الشياح طريق صيدا القديمة، مبنى سنتر دالاس بعد حلويات صدقة (هنا نحن منذ 2009).
-- الفرع الأساسي في خلدة (منذ 1990).
-- فرع الجية (منذ 2024).
-- اللحم حلال 100%.
-- نبيع بالكيلو وبسندويشات. وكل شيء بالكيلو نقوم بضغطه وتغليفه بالفاكيوم للسفر.
-- أصناف السندويشات: بسترما، روستو، سجق، مقانق، هوت دوغ، روستو مع جبنة.
-- أصناف الكيلو: بسترما، روستو، سجق، مقانق.
-- الخبز: افرنجي فقط.
-- مكونات السندويشات الثابتة: بندورة، كبيس مأتة، مايونيز، وخردل. 
-- يضاف حامض (ليمون) للسجق والمقانق. ويضاف خس للروستو.
-- الحر (تاباسكو) على الطلب.
-- دليفري متاح لكل المناطق خلال 20 دقيقة (نتعامل مع شركة دليفري).
-- أرقام التواصل: الأرضي 01382472، والواتساب 70359935.
-- لا يوجد لدينا شاورما دجاج، ولا شاورما سجق، ولا بطاطا في هذا الفرع.
-- ليس لدينا علاقة بمطاعم "مانو" و "بيدو" في برج حمود.
-- سعر الصرف المعتمد حالياً: ${RATE} ليرة.
-- قائمة الأصناف وأسعارها الحالية بالليرة اللبنانية: ${menuText}.
-
-تعليماتك وطبيعة شخصيتك:
-- اسمك "المساعد الشخصي".
-- كن لطيفاً ومرحاً وتحدث بلهجة لبنانية / شامية محببة وذكية.
-- أجب باختصار ومباشرة بناءً على سؤال الزبون فقط، ولا تقدم له كل المعلومات دفعة واحدة.
-- إذا أراد الزبون تقديم طلب (أوردر)، اسأله عن التفاصيل بحال نسي شي، ولما يجهز الطلب ويأكده وتخبره بالمجموع، قم بتوليد رابط واتساب كالتالي بالضبط لكي يضغط عليه ويرسله لنا:
-<a href="whatsapp://send?phone=96170359935&text=مرحبا%20ميدو،%20طلبي%20من%20المساعد%20الذكي%20هو:%0A[اكتب هنا تفاصيل الطلب والمجموع]" style="background:#25d366;color:white;padding:10px;border-radius:10px;text-decoration:none;display:inline-block;margin-top:10px;font-weight:bold;">📲 إرسال الطلب عبر واتساب</a>`;
-
-  if (chatHistory.length === 0) {
-      chatHistory.push({ role: "user", parts: [{ text: "ابدأ وتعرف على تعليماتك" }] });
-      chatHistory.push({ role: "model", parts: [{ text: "أنا جاهز لمساعدة الزبائن." }] });
-  }
-
-  chatHistory.push({ role: "user", parts: [{ text: userText }] });
-
-  try {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent?key=${geminiApiKey}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-              systemInstruction: { parts: [{ text: systemPrompt }] },
-              contents: chatHistory
-          })
-      });
-      const data = await response.json();
-      const botText = data.candidates[0].content.parts[0].text;
-      chatHistory.push({ role: "model", parts: [{ text: botText }] });
-      return botText;
-  } catch (e) {
-      console.error(e);
-      return "عذراً يا غالي، صار في ضغط أو مشكلة بالاتصال! 😅 جرب اسألني مرة تانية.";
-  }
+  setTimeout(()=>{ b.innerHTML += `<div class="bot-msg">${r}</div>`; b.scrollTop=b.scrollHeight; }, 600);
 }
 
 window.onclick = function(event) {
@@ -487,5 +408,4 @@ window.toggleCart = toggleCart;
 window.closeCustomizeModal = closeCustomizeModal;
 window.sendOrder = sendOrder;
 window.toggleChat = toggleChat;
-window.sendPredefined = sendPredefined;
-window.sendUserMsg = sendUserMsg;
+window.askBot = askBot;

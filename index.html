@@ -195,7 +195,7 @@
 
 <!-- ===== CHATBOT ===== -->
 <div class="chat-widget-btn" onclick="toggleChat()">
-  <i class="fa-solid fa-robot"></i> اسأل ميدو
+  <i class="fa-solid fa-robot"></i> مساعد الـ Ai 🌟
 </div>
 <div class="chat-box" id="chatBox">
   <div class="chat-header">
@@ -212,7 +212,8 @@
     <button onclick="sendPredefined('أريد تفاصيل الدليفري')">🛵 دليفري</button>
   </div>
   <div class="chat-input-area">
-    <input type="text" id="chatInput" placeholder="اكتب سؤالك أو طلبك هون..." onkeypress="if(event.key === 'Enter') sendUserMsg()">
+    <button class="chat-mic-btn" id="micBtn" onclick="startVoiceRecognition()"><i class="fa-solid fa-microphone"></i></button>
+    <input type="text" id="chatInput" placeholder="اكتب سؤالك أو احكي..." onkeypress="if(event.key === 'Enter') sendUserMsg()">
     <button class="chat-send-btn" onclick="sendUserMsg()"><i class="fa-solid fa-paper-plane"></i></button>
   </div>
 </div>
