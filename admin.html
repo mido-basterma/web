@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root {
             --bg: #121212; --surface: #1e1e1e; --surface-2: #2c2c2c;
@@ -128,6 +129,9 @@
     <div class="sheet" id="settingsSheet">
         <div class="sheet-indicator"></div>
         <div class="sheet-title">إعدادات المطعم</div>
+        <button class="sheet-btn" onclick="generateMenuImage()" style="background: linear-gradient(135deg, var(--gold), #e1b12c); color: #000;">
+            <span>📸 تحميل صورة المنيو للشاشة</span> <i class="fas fa-image"></i>
+        </button>
         <button class="sheet-btn" onclick="openPhoneModal()">
             <span>الإعدادات العامة (أرقام وصرف)</span> <i class="fas fa-cog"></i>
         </button>
@@ -161,6 +165,59 @@
             <input type="password" id="geminiApiKey" class="input-field" placeholder="AIzaSy...">
         </div>
         <button class="btn" onclick="saveSettings()">حفظ الإعدادات</button>
+    </div>
+
+    <!-- Template for Menu Image Export -->
+    <div id="export-container" style="position: absolute; left: -9999px; top: -9999px; width: 1920px; height: 1080px; background: url('menu_bg.png') no-repeat center/cover; font-family: 'Cairo', sans-serif; direction: rtl;">
+        <style>
+            /* التعديل لضمان الفواصل بمكانها الصحيح، ومحاذاة السعر بجانب النقطة الحمراء تماماً */
+            .export-price { 
+                position: absolute; 
+                color: #cc1e1e; /* لون أحمر مطابق للصورة */
+                font-weight: 900; 
+                font-size: 62px; /* تكبير الخط ليتطابق مع الصورة */
+                letter-spacing: 1px; 
+                text-shadow: 1px 1px 3px rgba(0,0,0,0.2);
+                direction: ltr; /* مهم جداً لتظهر الفاصلة بالإنجليزية 400,000 */
+                text-align: right; /* لمحاذاة الرقم من جهة اليمين ليثبت بجانب النقطة الحمراء */
+                width: 400px; /* مساحة ليتمدد فيها الرقم براحته لليسار */
+            }
+            
+            /* الكيلو (على اليسار) - نستخدم right لتثبيت الرقم بالنسبة لليمين */
+            #p_kilo_basterma { top: 260px; right: 1475px; }
+            #p_kilo_rosto { top: 435px; right: 1475px; }
+            #p_kilo_soujouk { top: 610px; right: 1475px; }
+            #p_kilo_makanek { top: 790px; right: 1475px; }
+            
+            /* المشروبات (في الوسط) */
+            #p_drink_pepsi { top: 485px; right: 865px; font-size: 55px;}
+            #p_drink_ayran { top: 585px; right: 865px; font-size: 55px;}
+            #p_drink_water { top: 685px; right: 865px; font-size: 55px;}
+            
+            /* السندويشات (على اليمين) */
+            #p_sand_basterma { top: 220px; right: 235px; }
+            #p_sand_rosto { top: 345px; right: 235px; }
+            #p_sand_soujouk { top: 465px; right: 235px; }
+            #p_sand_makanek { top: 585px; right: 235px; }
+            #p_sand_hotdog { top: 705px; right: 235px; }
+            #p_sand_rosto_cheese { top: 845px; right: 235px; }
+        </style>
+        <!-- السندويشات -->
+        <div class="export-price" id="p_sand_basterma">0</div>
+        <div class="export-price" id="p_sand_rosto">0</div>
+        <div class="export-price" id="p_sand_soujouk">0</div>
+        <div class="export-price" id="p_sand_makanek">0</div>
+        <div class="export-price" id="p_sand_hotdog">0</div>
+        <div class="export-price" id="p_sand_rosto_cheese">0</div>
+        <!-- الكيلو -->
+        <div class="export-price" id="p_kilo_basterma">0</div>
+        <div class="export-price" id="p_kilo_rosto">0</div>
+        <div class="export-price" id="p_kilo_soujouk">0</div>
+        <div class="export-price" id="p_kilo_makanek">0</div>
+        <!-- المشروبات -->
+        <div class="export-price" id="p_drink_pepsi">0</div>
+        <div class="export-price" id="p_drink_ayran">0</div>
+        <div class="export-price" id="p_drink_water">0</div>
     </div>
 
     <div id="toast">تم بنجاح</div>
@@ -457,6 +514,60 @@
                     update(ref(db), updates).then(() => showToast('تم زيادة الأسعار 🚀'));
                 }
             }, 100);
+        };
+
+        // ===== دالة توليد الصورة السحرية =====
+        window.generateMenuImage = () => {
+            closeAllViews();
+            showToast('جاري تحضير الصورة، ثواني يا غالي... ⏳');
+            
+            // دالة لجلب السعر من الداتا، وإذا لم يجده يضع السعر الافتراضي
+            const getPrice = (type, keyword, defaultPrice = 0) => {
+                let item = menuData.find(i => i.type === type && i.name.includes(keyword));
+                return item ? item.price.toLocaleString('en-US') : defaultPrice.toLocaleString('en-US');
+            };
+
+            // وضع الأسعار في القالب (السندويشات)
+            document.getElementById('p_sand_basterma').innerText = getPrice('sandwich', 'بسترما');
+            document.getElementById('p_sand_rosto').innerText = getPrice('sandwich', 'روستو');
+            document.getElementById('p_sand_soujouk').innerText = getPrice('sandwich', 'سجق');
+            document.getElementById('p_sand_makanek').innerText = getPrice('sandwich', 'مقانق');
+            document.getElementById('p_sand_hotdog').innerText = getPrice('sandwich', 'هوت دوغ');
+            document.getElementById('p_sand_rosto_cheese').innerText = getPrice('sandwich', 'جبنة', 550000);
+
+            // الكيلو
+            document.getElementById('p_kilo_basterma').innerText = getPrice('kilo', 'بسترما');
+            document.getElementById('p_kilo_rosto').innerText = getPrice('kilo', 'روستو');
+            document.getElementById('p_kilo_soujouk').innerText = getPrice('kilo', 'سجق');
+            document.getElementById('p_kilo_makanek').innerText = getPrice('kilo', 'مقانق');
+
+            // المشروبات
+            document.getElementById('p_drink_pepsi').innerText = getPrice('drink', 'بيبسي', 100000);
+            document.getElementById('p_drink_ayran').innerText = getPrice('drink', 'عيران', 80000);
+            document.getElementById('p_drink_water').innerText = getPrice('drink', 'ماء', 30000);
+
+            const container = document.getElementById('export-container');
+            container.style.left = '0';
+            container.style.top = '0';
+            container.style.zIndex = '-100'; // خلف الشاشة لعدم إزعاج المستخدم
+
+            // التقاط الصورة وتنزيلها بدقة عالية جداً
+            setTimeout(() => {
+                // scale: 3 تعني جودة عالية جداً (4K تقريباً)
+                html2canvas(container, { scale: 3, useCORS: true, backgroundColor: null }).then(canvas => {
+                    container.style.left = '-9999px'; // إرجاع الإخفاء
+                    
+                    const link = document.createElement('a');
+                    link.download = `Mido_Menu_HighRes_${new Date().toISOString().slice(0,10)}.png`;
+                    link.href = canvas.toDataURL('image/png', 1.0);
+                    link.click();
+                    
+                    showToast('تم تحميل الصورة بدقة عالية بنجاح! 🎉');
+                }).catch(err => {
+                    container.style.left = '-9999px';
+                    alert("حدث خطأ أثناء التصوير: تأكد من رفع صورة menu_bg.png بشكل صحيح.");
+                });
+            }, 500); // انتظار نصف ثانية لتأكيد ظهور الأرقام
         };
     </script>
 </body>
