@@ -211,11 +211,11 @@
     <button onclick="sendPredefined('ما هو المنيو؟')">🍔 المنيو</button>
     <button onclick="sendPredefined('أريد تفاصيل الدليفري')">🛵 دليفري</button>
   </div>
-  <div class="chat-input-area">
+    <div class="chat-input-area">
     <button class="chat-mic-btn" id="micBtn" onclick="toggleRecording()">
       <i class="fa-solid fa-microphone"></i>
     </button>
-    <input type="text" id="chatInput" placeholder="اكتب سؤالك أو احكي..." onkeypress="if(event.key === 'Enter') sendUserMsg()">
+    <textarea id="chatInput" placeholder="اكتب سؤالك أو احكي..." rows="1"></textarea>
     <button class="chat-send-btn" onclick="sendUserMsg()">
       <i class="fa-solid fa-paper-plane"></i>
     </button>

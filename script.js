@@ -277,46 +277,49 @@ function toggleCart() {
 function sendOrder() {
   if(cart.length === 0){ openModal('emptyAlertModal'); return; }
   
-  let message = "مرحبا ميدو، طلبي من المساعد الذكي:%0a%0a";
+  let message = "مرحبا ميدو، طلبي من الموقع :%0a%0a";
   let total = 0;
   
-  // 1. تجميع الطلبات حسب الاسم
   let groupedCart = {};
   cart.forEach(item => {
     let itemQty = item.qty || 1;
     total += item.price * itemQty;
     
+    // تنظيف الملاحظات (إزالة الأقواس واستبدال "بدون:" بـ "بلا")
+    let note = (item.notes && item.notes.trim() !== "")
+      ? item.notes.replace(/^\(\vert{}\)$/g, '').replace('بدون: ', 'بلا ')
+      : "عادي";
+    
     if (!groupedCart[item.name]) {
-      groupedCart[item.name] = { totalQty: 0, variants: [] };
+      groupedCart[item.name] = { totalQty: 0, variants: {} };
     }
     groupedCart[item.name].totalQty += itemQty;
-    groupedCart[item.name].variants.push({ notes: item.notes, qty: itemQty });
+    
+    if (!groupedCart[item.name].variants[note]) {
+      groupedCart[item.name].variants[note] = 0;
+    }
+    groupedCart[item.name].variants[note] += itemQty;
   });
   
-  // 2. بناء رسالة الواتساب بالشكل المطلوب
   for (const [name, data] of Object.entries(groupedCart)) {
     message += `- ${name} (x${data.totalQty})%0a`;
     
-    let normalQty = 0;
-    data.variants.forEach(v => {
-      if (!v.notes || v.notes.trim() === "") {
-        normalQty += v.qty;
-      } else {
-        // إزالة الأقواس واستبدال كلمة "بدون:" بـ "بلا" لتطابق المثال
-        let cleanNotes = v.notes.replace(/^\(\vert{}\)$/g, '').replace('بدون: ', 'بلا ');
-        message += `- ${v.qty} ${cleanNotes}%0a`;
-      }
-    });
-    
-    if (normalQty > 0) {
-      message += `- ${normalQty} عادي%0a`;
+    let variantKeys = Object.keys(data.variants);
+    // إذا كان الصنف كله "عادي" بدون أي تعديل، لا نطبع التفاصيل
+    if (variantKeys.length === 1 && variantKeys[0] === "عادي") {
+        // لا تفعل شيئاً إضافياً
+    } else {
+        for (const [note, qty] of Object.entries(data.variants)) {
+          message += `- ${qty} ${note}%0a`;
+        }
+        message += `--------------%0a`;
     }
-    message += `--------------%0a%0a`;
   }
   
   const usdTotal = (total/RATE).toFixed(2);
-  message += `*المجموع الدقيق: ${total.toLocaleString()} ل.ل (${usdTotal}$)*`;
-  message += "%0a%0a📍 العنوان:";
+  // وضع العنوان قبل المجموع كما طلبت
+  message += `%0aالعنوان : %0a`;
+  message += `*المجموع الدقيق: ${total.toLocaleString('en-US')} ل.ل (${usdTotal}$)*`;
   
   window.location.href = `whatsapp://send?phone=${storePhone}&text=${message}`;
 }
@@ -378,7 +381,11 @@ async function sendUserMsg() {
   if (!text) return;
   
   const b = document.getElementById("chatBody");
-  b.innerHTML += `<div class="user-msg">${text}</div>`;
+  
+  // تحويل النزول لسطر جديد في رسالة المستخدم إلى كود <br> ليظهر بشكل صحيح
+  let formattedUserText = text.replace(/\n/g, '<br>');
+  b.innerHTML += `<div class="user-msg">${formattedUserText}</div>`;
+  
   inputEl.value = "";
   b.scrollTop = b.scrollHeight;
   
@@ -422,14 +429,14 @@ async function callGeminiAPI(userText, base64Audio = null, mimeType = null) {
     
 طريقة إنهاء الطلب وإصدار الكود السري (مهم جداً جداً):
 - عندما يؤكد الزبون الطلب بالكامل، اكتب في نهاية رسالتك الكود السري التالي بالضبط:
-$$ORDER:اسم الصنف=الكمية=ملاحظات,اسم الصنف=الكمية=ملاحظات$$
+$$ORDER:اسم الصنف=الكمية=ملاحظات|اسم الصنف=الكمية=ملاحظات$$
 
 قواعد كتابة الكود السري:
-1. يجب فصل كل صنف بعلامة فاصلة (,).
+1. يجب فصل كل صنف بعلامة الخط العمودي (|) حصراً وليس فاصلة.
 2. يجب فصل الاسم والكمية والملاحظات بعلامة يساوى (=).
 3. إذا لم يطلب الزبون أي تعديل، اكتب في خانة الملاحظات كلمة "عادي".
-4. إذا طلب الزبون تعديل (مثلاً: 3 سجق، واحد منهم بلا بندورة واثنين عادي)، افصلها هكذا:
-$$ORDER:سندويش سجق=1=بلا بندورة,سندويش سجق=2=عادي$$
+4. إذا طلب الزبون تعديل (مثلاً: 5 روستو، 3 منهم بلا خس و2 عادي)، افصلها هكذا:
+$$ORDER:سندويش روستو=3=بلا خس|سندويش روستو=2=عادي$$
 ملاحظة: تأكد من كتابة أسماء الأصناف في الكود السري مطابقة تماماً للقائمة المذكورة.`;
 
   if (chatHistory.length === 0) {
@@ -468,53 +475,71 @@ $$ORDER:سندويش سجق=1=بلا بندورة,سندويش سجق=2=عادي
       const match = botText.match(orderRegex);
       
       if(match) {
-         const itemsStr = match[1];
+         let itemsStr = match[1];
+         
+         // تصحيح الأخطاء إذا استخدم المساعد فواصل بالخطأ
+         if (!itemsStr.includes('|') && itemsStr.includes(',')) {
+             itemsStr = itemsStr.replace(/,/g, '|');
+         }
+         
          let total = 0;
          let groupedCart = {};
          
-         itemsStr.split(',').forEach((pair) => {
+         itemsStr.split('|').forEach((pair) => {
             let parts = pair.split('=');
             if(parts.length >= 2) {
                 let name = parts[0].trim();
                 let qty = parseInt(parts[1].trim()) || 1;
-                let notes = parts[2] ? parts[2].trim() : "عادي";
+                let note = parts[2] ? parts[2].trim() : "عادي";
+                
+                if (note === "" || note === "null" || note === "بدون") note = "عادي";
                 
                 let exactItem = menuItems.find(i => i.name === name) || menuItems.find(i => i.name.includes(name) || name.includes(i.name));
                 
                 if(exactItem) {
                     total += exactItem.price * qty;
-                    // تجميع الأسماء
+                    
                     if (!groupedCart[exactItem.name]) {
-                        groupedCart[exactItem.name] = { totalQty: 0, variants: [] };
+                        groupedCart[exactItem.name] = { totalQty: 0, variants: {} };
                     }
                     groupedCart[exactItem.name].totalQty += qty;
-                    groupedCart[exactItem.name].variants.push({ notes: notes, qty: qty });
+                    
+                    if (!groupedCart[exactItem.name].variants[note]) {
+                        groupedCart[exactItem.name].variants[note] = 0;
+                    }
+                    groupedCart[exactItem.name].variants[note] += qty;
                 }
             }
          });
          
-         let orderTextForWa = "";
+         let orderTextForWa = "مرحبا ميدو، طلبي من المساعد الذكي:%0a%0a";
          let invoiceHtml = "";
          
          for (const [name, data] of Object.entries(groupedCart)) {
             orderTextForWa += `- ${name} (x${data.totalQty})%0a`;
             invoiceHtml += `<strong>${name} (x${data.totalQty})</strong><br>`;
             
-            data.variants.forEach(v => {
-               orderTextForWa += `-${v.qty} ${v.notes}%0a`;
-               invoiceHtml += `<span style="color:#777; font-size:0.9em;">- ${v.qty} ${v.notes}</span><br>`;
-            });
-            orderTextForWa += `--------------%0a%0a`;
+            let variantKeys = Object.keys(data.variants);
+            if (variantKeys.length === 1 && variantKeys[0] === "عادي") {
+                // إذا كان الطلب كله عادياً، نتجاوز طبع التفاصيل
+            } else {
+                for (const [note, qty] of Object.entries(data.variants)) {
+                   orderTextForWa += `- ${qty} ${note}%0a`;
+                   invoiceHtml += `<span style="color:#777; font-size:0.9em;">- ${qty} ${note}</span><br>`;
+                }
+                orderTextForWa += `--------------%0a`;
+            }
          }
          
          const usdTotal = (total/RATE).toFixed(2);
+         orderTextForWa += `%0aالعنوان : %0a`;
          orderTextForWa += `*المجموع الدقيق: ${total.toLocaleString('en-US')} ل.ل (${usdTotal}$)*`;
          
          let waLink = `<br><br><div style="background:#fffaf5; border:1.5px dashed var(--red-light); padding:14px; border-radius:14px; margin-top:10px;">
             <div style="font-weight:900; color:var(--brown); margin-bottom:8px; font-size:1.1em;">🧾 تفاصيل فاتورتك:</div>
             <div style="font-size:0.95em; color:#555; margin-bottom:12px; line-height:1.6;">${invoiceHtml}</div>
             <div style="font-weight:900; color:var(--red); font-size:1.2em; margin-bottom:12px; border-top:1px solid #ddd; padding-top:8px;">المجموع: ${total.toLocaleString('en-US')} ل.ل</div>
-            <a href="whatsapp://send?phone=96170359935&text=مرحبا%20ميدو،%20طلبي%20من%20المساعد%20الذكي:%0a%0a${orderTextForWa}" style="background:linear-gradient(135deg, #1ebe57, #25d366);color:white;padding:12px 15px;border-radius:50px;text-decoration:none;display:inline-flex;align-items:center;gap:8px;font-weight:bold;box-shadow:0 4px 10px rgba(37,211,102,0.3);width:100%;justify-content:center;font-size:1.05em;">
+            <a href="whatsapp://send?phone=${storePhone}&text=${orderTextForWa}" style="background:linear-gradient(135deg, #1ebe57, #25d366);color:white;padding:12px 15px;border-radius:50px;text-decoration:none;display:inline-flex;align-items:center;gap:8px;font-weight:bold;box-shadow:0 4px 10px rgba(37,211,102,0.3);width:100%;justify-content:center;font-size:1.05em;">
               <i class="fab fa-whatsapp" style="font-size:1.3em;"></i> إرسال الطلب واعتماده
             </a>
          </div>`;
