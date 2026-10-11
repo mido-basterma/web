@@ -586,26 +586,36 @@
                 return item ? item.price.toLocaleString('en-US') : defaultPrice.toLocaleString('en-US');
             };
 
-            document.getElementById('p_sand_basterma').innerText = getPrice('sandwich', 'بسترما');
-            document.getElementById('p_sand_rosto').innerText = getPrice('sandwich', 'روستو');
-            document.getElementById('p_sand_soujouk').innerText = getPrice('sandwich', 'سجق');
-            document.getElementById('p_sand_makanek').innerText = getPrice('sandwich', 'مقانق');
-            document.getElementById('p_sand_hotdog').innerText = getPrice('sandwich', 'هوت دوغ');
+            // وضع القيم في أماكنها
+            document.getElementById('p_sand_basterma').innerText = getPrice('sandwich', 'بسترما', 500000);
+            document.getElementById('p_sand_rosto').innerText = getPrice('sandwich', 'روستو', 500000);
+            document.getElementById('p_sand_soujouk').innerText = getPrice('sandwich', 'سجق', 400000);
+            document.getElementById('p_sand_makanek').innerText = getPrice('sandwich', 'مقانق', 400000);
+            document.getElementById('p_sand_hotdog').innerText = getPrice('sandwich', 'هوت', 350000);
             document.getElementById('p_sand_rosto_cheese').innerText = getPrice('sandwich', 'جبنة', 550000);
 
-            document.getElementById('p_kilo_basterma').innerText = getPrice('kilo', 'بسترما');
-            document.getElementById('p_kilo_rosto').innerText = getPrice('kilo', 'روستو');
-            document.getElementById('p_kilo_soujouk').innerText = getPrice('kilo', 'سجق');
-            document.getElementById('p_kilo_makanek').innerText = getPrice('kilo', 'مقانق');
+            document.getElementById('p_kilo_basterma').innerText = getPrice('kilo', 'بسترما', 2700000);
+            document.getElementById('p_kilo_rosto').innerText = getPrice('kilo', 'روستو', 2800000);
+            document.getElementById('p_kilo_soujouk').innerText = getPrice('kilo', 'سجق', 1400000);
+            document.getElementById('p_kilo_makanek').innerText = getPrice('kilo', 'مقانق', 1400000);
 
             document.getElementById('p_drink_pepsi').innerText = getPrice('drink', 'بيبسي', 100000);
             document.getElementById('p_drink_ayran').innerText = getPrice('drink', 'عيران', 80000);
             document.getElementById('p_drink_water').innerText = getPrice('drink', 'ماء', 30000);
 
+            // استرجاع الإحداثيات المحفوظة في الذاكرة (لتطبيق تعديلاتك المباشرة)
+            document.querySelectorAll('.export-price').forEach(el => {
+                let savedPos = localStorage.getItem('pos_' + el.id);
+                if (savedPos) {
+                    let pos = JSON.parse(savedPos);
+                    el.style.top = pos.top;
+                    el.style.left = pos.left;
+                }
+            });
+
             const container = document.getElementById('export-container');
             const bgImg = document.getElementById('menuBgImg');
 
-            // إجبار المتصفح على قراءة الخلفية من السيرفر وليس من الكاش
             if (!bgImg.src.includes('?v=')) {
                 bgImg.src = 'menu_bg.png?v=' + new Date().getTime();
             }
@@ -614,7 +624,6 @@
             container.style.top = '0';
             container.style.zIndex = '-100'; 
 
-            // انتظار ثانية ونصف لضمان تحميل الخلفية، مع إجبار العرض والارتفاع
             setTimeout(() => {
                 html2canvas(container, { 
                     scale: 2, 
@@ -637,13 +646,13 @@
             }, 1500); 
         };
 
-        // ===== المحرر البصري المباشر =====
+        // ===== المحرر البصري المباشر (المطور) =====
         let selectedEl = null;
 
         window.openVisualEditor = () => {
             closeAllViews();
             const modal = document.getElementById('editorModal');
-            modal.style.display = 'flex'; // إظهار النافذة بشكل صحيح
+            modal.style.display = 'flex'; 
             requestAnimationFrame(() => modal.classList.add('active'));
             
             const getPrice = (type, keyword, defaultPrice = 0) => {
@@ -667,24 +676,32 @@
             document.getElementById('p_drink_ayran').innerText = getPrice('drink', 'عيران', 80000);
             document.getElementById('p_drink_water').innerText = getPrice('drink', 'ماء', 30000);
 
+            // استرجاع الإحداثيات المحفوظة لتعرض لك مكانها الحالي
+            document.querySelectorAll('.export-price').forEach(el => {
+                let savedPos = localStorage.getItem('pos_' + el.id);
+                if (savedPos) {
+                    let pos = JSON.parse(savedPos);
+                    el.style.top = pos.top;
+                    el.style.left = pos.left;
+                }
+            });
+
             const container = document.getElementById('export-container');
             const workspace = document.getElementById('editorWorkspace');
             const bgImg = document.getElementById('menuBgImg');
             
             if (!bgImg.src.includes('?v=')) bgImg.src = 'menu_bg.png?v=' + new Date().getTime();
             
-            // إعدادات القالب ليتناسب مع شاشة الجوال
             container.style.position = 'absolute';
             container.style.left = '0';
             container.style.top = '0';
             container.style.zIndex = '1';
             
-            // حساب التصغير بناءً على عرض شاشة الهاتف بالضبط ليناسبها 100%
+            // حل مشكلة قص الصورة في الموبايل باستخدام Transform بدل Zoom
             let scaleVal = window.innerWidth / 1920; 
-            
-            // استخدام zoom بدلاً من transform لضمان عدم حدوث مساحات فارغة مزعجة
-            container.style.zoom = scaleVal;
-            container.style.transform = 'none';
+            container.style.transform = `scale(${scaleVal})`;
+            container.style.transformOrigin = 'top right'; // نقطة الارتكاز لحل القص
+            container.style.zoom = 'normal'; // إلغاء الزووم القديم المسبب للمشكلة
             
             workspace.innerHTML = '';
             workspace.appendChild(container);
@@ -716,7 +733,7 @@
             container.style.position = 'absolute';
             container.style.left = '-9999px';
             container.style.top = '-9999px';
-            container.style.zoom = '1'; // إعادة الزوم للطبيعي
+            container.style.transform = 'none'; 
             document.body.appendChild(container);
             
             if(selectedEl) selectedEl.style.border = 'none';
@@ -726,19 +743,16 @@
         window.savePositions = () => {
             if(selectedEl) selectedEl.style.border = 'none';
             
-            let cssOutput = `/* استبدل الأسطر القديمة بهذا الكود الجديد الذي يحدد مواقع الأرقام بدقة */\n`;
+            // الحفظ الذكي في ذاكرة الهاتف مباشرة!
             document.querySelectorAll('.export-price').forEach(el => {
-                let top = parseInt(el.style.top || window.getComputedStyle(el).top) || 0;
-                let left = parseInt(el.style.left || window.getComputedStyle(el).left) || 0;
-                cssOutput += `#${el.id} { top: ${top}px; left: ${left}px; }\n`;
+                let pos = {
+                    top: el.style.top || window.getComputedStyle(el).top,
+                    left: el.style.left || window.getComputedStyle(el).left
+                };
+                localStorage.setItem('pos_' + el.id, JSON.stringify(pos));
             });
             
-            navigator.clipboard.writeText(cssOutput).then(() => {
-                alert("تم نسخ الكود بنجاح! 📋\n\nافتح ملف admin.html واستبدل أرقام الـ (top/left) القديمة بهذا الكود المنسوخ.");
-            }).catch(err => {
-                alert("انسخ هذا الكود وضعه في الستايل:\n\n" + cssOutput);
-            });
-            
+            showToast('تم حفظ الأماكن بنجاح! جرب حمل الصورة الآن ✅');
             closeEditorModal();
         };
     </script>
