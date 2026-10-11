@@ -622,6 +622,8 @@
                 bgImg.src = 'menu_bg.png?v=' + new Date().getTime();
             }
 
+            // إزالة أي زم (Scale) قبل تصدير الصورة لتنزل بدقتها الأصلية والقيم الصح
+            container.style.transform = 'none';
             container.style.left = '0';
             container.style.top = '0';
             container.style.zIndex = '-100'; 
@@ -696,13 +698,14 @@
             
             if (!bgImg.src.includes('?v=')) bgImg.src = 'menu_bg.png?v=' + new Date().getTime();
             
-            // تحويل القالب إلى صورة حرة يمكن تمريرها داخل المعرض
+            // تحويل القالب وتصغيره ليناسب شاشة الجوال (حل مشكلة الزم)
+            let scaleValue = window.innerWidth / 1920;
             container.style.position = 'absolute';
             container.style.left = '0';
             container.style.top = '0';
             container.style.zIndex = '1';
-            container.style.transform = 'none'; 
-            container.style.zoom = 'normal'; 
+            container.style.transform = `scale(${scaleValue})`; 
+            container.style.transformOrigin = 'top left'; 
             
             workspace.innerHTML = '';
             workspace.appendChild(container);
@@ -721,8 +724,9 @@
             if(!selectedEl) return showToast('اضغط على أي رقم لتحديده أولاً!', true);
             let currentLeft = parseInt(selectedEl.style.left || window.getComputedStyle(selectedEl).left) || 0;
             let currentTop = parseInt(selectedEl.style.top || window.getComputedStyle(selectedEl).top) || 0;
-            selectedEl.style.left = (currentLeft + x) + 'px';
-            selectedEl.style.top = (currentTop + y) + 'px';
+            // سرعنا الحركة بضربها بـ 5 لتوضح معك الإزاحة بعد ما صغرنا الصورة
+            selectedEl.style.left = (currentLeft + (x * 5)) + 'px';
+            selectedEl.style.top = (currentTop + (y * 5)) + 'px';
         };
 
         window.closeEditorModal = () => {
@@ -731,6 +735,7 @@
             setTimeout(() => modal.style.display = 'none', 300);
             
             const container = document.getElementById('export-container');
+            container.style.transform = 'none'; // تصفير الزم لحتى ترجع الدقة الأصلية
             container.style.position = 'absolute';
             container.style.left = '-9999px';
             container.style.top = '-9999px';
