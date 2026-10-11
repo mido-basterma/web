@@ -255,26 +255,28 @@
         <div class="export-price drink-price" id="p_drink_water">0</div>
     </div>
 
-    <!-- واجهة التعديل المباشر -->
-    <div class="modal" id="editorModal" style="background: #111;">
-        <div class="modal-header" style="position: relative; z-index: 10000; background: #222; padding: 15px; border-radius: 15px; margin-bottom: 0; box-shadow: 0 5px 15px rgba(0,0,0,0.5);">
-            <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
-                <h3 style="color:var(--gold); font-size:1rem; margin:0;">اضغط عالرقم وعدل مكانه 👇</h3>
-                <button class="icon-btn" onclick="closeEditorModal()"><i class="fas fa-times" style="color:white;"></i></button>
+    <!-- واجهة التعديل المباشر (النسخة المتوافقة مع الجوال) -->
+    <div class="modal" id="editorModal" style="background: #111; padding: 0; display: none; flex-direction: column; height: 100vh; width: 100%; overflow: hidden;">
+        <!-- لوحة التحكم الثابتة بالأعلى -->
+        <div style="background: #222; padding: 15px; z-index: 10000; box-shadow: 0 4px 15px rgba(0,0,0,0.8); flex-shrink: 0; width: 100%;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="color: var(--gold); font-size: 1rem; margin: 0;">👁️ المحرر البصري للأسعار</h3>
+                <button onclick="closeEditorModal()" style="background: none; border: none; color: #ff4757; font-size: 1.5rem; cursor: pointer;"><i class="fas fa-times-circle"></i></button>
             </div>
-            
-            <div style="display:grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap:8px; margin-top:15px;">
-                <button onclick="moveSelected(0, -5)" style="padding:12px; border-radius:10px; background:#444; color:white; border:none; font-weight:bold;">⬆️ فوق</button>
-                <button onclick="moveSelected(0, 5)" style="padding:12px; border-radius:10px; background:#444; color:white; border:none; font-weight:bold;">⬇️ تحت</button>
-                <button onclick="moveSelected(5, 0)" style="padding:12px; border-radius:10px; background:#444; color:white; border:none; font-weight:bold;">➡️ يمين</button>
-                <button onclick="moveSelected(-5, 0)" style="padding:12px; border-radius:10px; background:#444; color:white; border:none; font-weight:bold;">⬅️ يسار</button>
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;">
+                <button onclick="moveSelected(0, -5)" style="padding:10px 5px; background:#444; color:white; border:none; border-radius:8px; font-weight:bold; font-size:0.9rem;">⬆️ فوق</button>
+                <button onclick="moveSelected(0, 5)" style="padding:10px 5px; background:#444; color:white; border:none; border-radius:8px; font-weight:bold; font-size:0.9rem;">⬇️ تحت</button>
+                <button onclick="moveSelected(5, 0)" style="padding:10px 5px; background:#444; color:white; border:none; border-radius:8px; font-weight:bold; font-size:0.9rem;">➡️ يمين</button>
+                <button onclick="moveSelected(-5, 0)" style="padding:10px 5px; background:#444; color:white; border:none; border-radius:8px; font-weight:bold; font-size:0.9rem;">⬅️ يسار</button>
             </div>
-            <button onclick="savePositions()" style="width:100%; padding:15px; margin-top:15px; background:var(--green); color:white; border:none; border-radius:10px; font-weight:bold; font-size:1.1rem;">✅ حفظ ونسخ الكود</button>
+            <button onclick="savePositions()" style="width: 100%; padding: 12px; margin-top: 10px; background: var(--green); color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 1.1rem;">✅ حفظ ونسخ الإحداثيات</button>
         </div>
         
-        <!-- مساحة عرض الصورة -->
-        <div id="editorWorkspace" style="position: relative; width: 100%; height: calc(100vh - 220px); overflow: auto; display: flex; justify-content: center; align-items: flex-start; padding-top: 20px;">
-            <!-- سيتم نقل قالب الصورة إلى هنا برمجياً أثناء التعديل -->
+        <!-- مساحة الصورة المصغرة لتناسب الجوال -->
+        <div style="flex: 1; overflow: hidden; position: relative; background: #000; width: 100%; display: flex; justify-content: center; align-items: flex-start; padding-top: 20px;">
+            <div id="editorWorkspace" style="position: relative;">
+                <!-- سيتم وضع الصورة هنا برمجياً -->
+            </div>
         </div>
     </div>
 
@@ -640,7 +642,9 @@
 
         window.openVisualEditor = () => {
             closeAllViews();
-            document.getElementById('editorModal').classList.add('active');
+            const modal = document.getElementById('editorModal');
+            modal.style.display = 'flex'; // إظهار النافذة بشكل صحيح
+            requestAnimationFrame(() => modal.classList.add('active'));
             
             const getPrice = (type, keyword, defaultPrice = 0) => {
                 let item = menuData.find(i => i.type === type && i.name.includes(keyword));
@@ -669,15 +673,20 @@
             
             if (!bgImg.src.includes('?v=')) bgImg.src = 'menu_bg.png?v=' + new Date().getTime();
             
-            container.style.position = 'relative';
+            // إعدادات القالب ليتناسب مع شاشة الجوال
+            container.style.position = 'absolute';
             container.style.left = '0';
             container.style.top = '0';
             container.style.zIndex = '1';
             
-            let scaleVal = window.innerWidth / 1950; 
-            container.style.transform = `scale(${scaleVal})`;
-            container.style.transformOrigin = 'top center';
+            // حساب التصغير بناءً على عرض شاشة الهاتف بالضبط ليناسبها 100%
+            let scaleVal = window.innerWidth / 1920; 
             
+            // استخدام zoom بدلاً من transform لضمان عدم حدوث مساحات فارغة مزعجة
+            container.style.zoom = scaleVal;
+            container.style.transform = 'none';
+            
+            workspace.innerHTML = '';
             workspace.appendChild(container);
 
             document.querySelectorAll('.export-price').forEach(el => {
@@ -685,7 +694,7 @@
                     if(selectedEl) selectedEl.style.border = 'none';
                     selectedEl = this;
                     selectedEl.style.border = '4px dashed #2ed573';
-                    showToast('تم التحديد! استخدم الأزرار للتحريك');
+                    showToast('تم التحديد! استخدم الأزرار للتحريك 👇');
                 }
             });
         };
@@ -699,13 +708,17 @@
         };
 
         window.closeEditorModal = () => {
-            document.getElementById('editorModal').classList.remove('active');
+            const modal = document.getElementById('editorModal');
+            modal.classList.remove('active');
+            setTimeout(() => modal.style.display = 'none', 300);
+            
             const container = document.getElementById('export-container');
             container.style.position = 'absolute';
             container.style.left = '-9999px';
             container.style.top = '-9999px';
-            container.style.transform = 'none';
+            container.style.zoom = '1'; // إعادة الزوم للطبيعي
             document.body.appendChild(container);
+            
             if(selectedEl) selectedEl.style.border = 'none';
             selectedEl = null;
         };
